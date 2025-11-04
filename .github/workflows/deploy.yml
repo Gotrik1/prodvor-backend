@@ -1,0 +1,68 @@
+name: Deploy backend to local PC via Tailscale
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: stable
+
+      - name: Trust host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.TAILSCALE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Pull & restart backend on Windows host
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.TAILSCALE_HOST }}
+          username: ${{ secrets.WINDOWS_USER }}
+          key: ${{ secrets.TAILSCALE_SSH_KEY }}
+          port: 22
+          script: |
+            REM ====== ПУТИ ======
+            cd /d E:\prodvor\backend
+
+            REM ====== GIT СИНХ ======
+            git fetch --all --prune
+            git reset --hard origin/main
+
+            REM ====== ЗАВИСИМОСТИ ======
+            if exist pnpm-lock.yaml (
+              pnpm -v >NUL 2>&1 && pnpm install --frozen-lockfile || npm install --no-audit --no-fund
+            ) else (
+              npm install --no-audit --no-fund
+            )
+
+            REM ====== МИГРАЦИИ БД (если надо)
+            if exist node_modules\.bin\prisma (
+              npx prisma migrate deploy || echo "skip prisma"
+            )
+
+            REM ====== ПЕРЕЗАПУСК (ВЫБЕРИ ОДНО) ======
+
+            REM [A] Dev-скрипт
+            taskkill /im node.exe /f >NUL 2>&1
+            start "" cmd /c "npm run start:dev"
+
+            REM [B] PM2
+            REM npx pm2 startOrReload ecosystem.config.js --only backend
+
+            REM [C] Docker Compose
+            REM cd /d E:\prodvor
+            REM docker compose pull
+            REM docker compose up -d --build
