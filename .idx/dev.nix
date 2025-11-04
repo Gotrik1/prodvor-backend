@@ -1,32 +1,41 @@
-{ pkgs, ... }: {
-              # Канал пакетов Nix, который будет использоваться.
-              channel = "stable-23.11";
-              # Пакеты, необходимые для вашего проекта.
-              packages = [
-                pkgs.bash # Убедимся, что bash доступен для запуска скриптов
-                pkgs.python3 # Явно добавляем Python 3 в окружение
-                pkgs.lsof # Добавляем lsof для проверки портов, если понадобится
-                pkgs.entr # Добавляем entr
-                pkgs.git  # Добавляем git
-              ];
-              # Расширения VS Code, которые будут установлены в рабочем пространстве.
-              idx.extensions = [
-                "ms-python.python"
-              ];
-              # Включаем и настраиваем предварительный просмотр.
-              idx.previews = {
-                enable = true;
-                previews = {
-                  # Название нашего предпросмотра: "web"
-                  web = {
-                    # Прямая команда для запуска сервера
-                    command = [
-                      "bash"
-                      "-c"
-                      "source .venv/bin/activate && python main.py"
-                    ];
-                    manager = "web";
-                  };
-                };
-              };
-            }
+# .idx/dev.nix (IDX schema: channel + packages + env + idx.*)
+{ pkgs, ... }:
+{
+  # Версию канала подправь при необходимости
+  channel = "stable-24.05";
+
+  # Инструменты, которые должны переживать пересборки среды
+  packages = [
+    pkgs.python3
+    pkgs.bash
+    pkgs.lsof
+    pkgs.git
+    pkgs.openssh        # ssh, ssh-agent, ssh-add
+    pkgs.inotify-tools  # inotifywait
+    pkgs.entr           # альтернатива вотчеру
+  ];
+
+  # Глобальные переменные окружения
+  env = {
+    # Git всегда использует ssh из Nix
+    GIT_SSH_COMMAND = "${pkgs.openssh}/bin/ssh";
+  };
+
+  # IDX-интеграции
+  idx = {
+    extensions = [
+      "ms-python.python"
+    ];
+
+    previews = {
+      enable = true;
+      previews = {
+        web = {
+          # В IDX здесь просто команда; venv активируй в стартовом скрипте
+          command = [ "bash" "-c" "python main.py" ];
+          manager = "web";
+        };
+      };
+    };
+  };
+}
