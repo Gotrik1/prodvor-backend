@@ -1,23 +1,30 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://developers.google.com/idx/guides/customize-idx-env
 { pkgs, ... }: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.05"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
-  packages = [ pkgs.python3 ];
-  idx = {
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
-    extensions = [ "ms-python.python" "rangav.vscode-thunder-client" ];
-    workspace = {
-      # Runs when a workspace is first created with this `dev.nix` file
-      onCreate = {
-        install =
-          "python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt";
-        # Open editors for the following files by default, if they exist:
-        default.openFiles = [ "README.md" "src/index.html" "main.py" ];
-      };
-      # Runs when a workspace is (re)started
-      onStart = { run-server = "./devserver.sh"; };
-    };
-  };
-}
+        # Канал пакетов Nix, который будет использоваться.
+        channel = "stable-23.11";
+        # Пакеты, необходимые для вашего проекта.
+        packages = [
+          pkgs.bash # Убедимся, что bash доступен для запуска скриптов
+          pkgs.python3 # Явно добавляем Python 3 в окружение
+          pkgs.lsof # Добавляем lsof для проверки портов, если понадобится
+        ];
+        # Расширения VS Code, которые будут установлены в рабочем пространстве.
+        idx.extensions = [
+          "ms-python.python"
+        ];
+        # Включаем и настраиваем предварительный просмотр.
+        idx.previews = {
+          enable = true;
+          previews = {
+            # Название нашего предпросмотра: "web"
+            web = {
+              # Прямая команда для запуска сервера
+              command = [
+                "bash"
+                "-c"
+                "source .venv/bin/activate && python main.py"
+              ];
+              manager = "web";
+            };
+          };
+        };
+      }

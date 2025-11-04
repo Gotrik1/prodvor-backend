@@ -1,0 +1,1403 @@
+{
+  "definitions": {},
+  "info": {
+    "description": "A RESTful API for a sports team and player matching platform.",
+    "title": "Sport Matching API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "responses": {
+          "302": {
+            "description": "Redirect to /apidocs/"
+          }
+        },
+        "summary": "Redirect to API docs",
+        "tags": [
+          "Index"
+        ]
+      }
+    },
+    "/api/v1/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Welcome message"
+          }
+        },
+        "summary": "Legacy Index",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/achievements": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of achievements"
+          }
+        },
+        "summary": "Get all achievements",
+        "tags": [
+          "Legacy - Achievements"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "email": {
+                  "description": "User's email",
+                  "example": "user@example.com",
+                  "type": "string"
+                },
+                "password": {
+                  "description": "User's password",
+                  "example": "password123",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "email",
+                "password"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User logged in successfully"
+          },
+          "400": {
+            "description": "Missing email or password"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login a user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "refreshToken": {
+                  "description": "The refresh token",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "refreshToken"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User logged out successfully"
+          },
+          "400": {
+            "description": "Missing refresh token"
+          }
+        },
+        "summary": "Logout a user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "refreshToken": {
+                  "description": "The refresh token",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "refreshToken"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully"
+          },
+          "400": {
+            "description": "Missing refresh token"
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "city": {
+                  "description": "User's city",
+                  "example": "\u041c\u043e\u0441\u043a\u0432\u0430",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "User's email",
+                  "example": "user@example.com",
+                  "type": "string"
+                },
+                "firstName": {
+                  "description": "User's first name",
+                  "example": "\u0418\u0432\u0430\u043d",
+                  "type": "string"
+                },
+                "lastName": {
+                  "description": "User's last name",
+                  "example": "\u0418\u0432\u0430\u043d\u043e\u0432",
+                  "type": "string"
+                },
+                "nickname": {
+                  "description": "User's nickname",
+                  "example": "MyNickname",
+                  "type": "string"
+                },
+                "password": {
+                  "description": "User's password",
+                  "example": "password123",
+                  "type": "string"
+                },
+                "role": {
+                  "description": "User's role",
+                  "example": "\u0418\u0433\u0440\u043e\u043a",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "email",
+                "password",
+                "nickname",
+                "role"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User registered successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          },
+          "409": {
+            "description": "Email or nickname already exists"
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/playgrounds": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of playgrounds"
+          }
+        },
+        "summary": "Get all playgrounds",
+        "tags": [
+          "Legacy - Playgrounds"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "surface": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "address",
+                "type",
+                "surface"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Playground created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          }
+        },
+        "summary": "Create a new playground",
+        "tags": [
+          "Legacy - Playgrounds"
+        ]
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of posts"
+          }
+        },
+        "summary": "Get all posts",
+        "tags": [
+          "Legacy - Posts"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "authorId": {
+                  "type": "integer"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "teamId": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "authorId",
+                "content"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Post created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          },
+          "404": {
+            "description": "Author or Team not found"
+          }
+        },
+        "summary": "Create a new post",
+        "tags": [
+          "Legacy - Posts"
+        ]
+      }
+    },
+    "/api/v1/posts/{post_id}/comments": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of comments for a post"
+          },
+          "404": {
+            "description": "Post not found"
+          }
+        },
+        "summary": "Get all comments for a post",
+        "tags": [
+          "Legacy - Posts"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "post_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "authorId": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "authorId",
+                "text"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Comment created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          },
+          "404": {
+            "description": "Post or Author not found"
+          }
+        },
+        "summary": "Create a new comment on a post",
+        "tags": [
+          "Legacy - Posts"
+        ]
+      }
+    },
+    "/api/v1/profiles/coach": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of coach profiles"
+          }
+        },
+        "summary": "Get all coach profiles",
+        "tags": [
+          "Legacy - Profiles"
+        ]
+      }
+    },
+    "/api/v1/profiles/player": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of player profiles"
+          }
+        },
+        "summary": "Get all player profiles",
+        "tags": [
+          "Legacy - Profiles"
+        ]
+      }
+    },
+    "/api/v1/profiles/referee": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of referee profiles"
+          }
+        },
+        "summary": "Get all referee profiles",
+        "tags": [
+          "Legacy - Profiles"
+        ]
+      }
+    },
+    "/api/v1/quests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of quests"
+          }
+        },
+        "summary": "Get all quests",
+        "tags": [
+          "Legacy - Quests"
+        ]
+      }
+    },
+    "/api/v1/sponsors": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of sponsors"
+          }
+        },
+        "summary": "Get all sponsors",
+        "tags": [
+          "Legacy - Sponsors"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "contribution": {
+                  "type": "string"
+                },
+                "logoUrl": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "logoUrl",
+                "contribution"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sponsor created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          }
+        },
+        "summary": "Create a new sponsor",
+        "tags": [
+          "Legacy - Sponsors"
+        ]
+      }
+    },
+    "/api/v1/sports": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "isTeamSport": {
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "isTeamSport"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sport created successfully"
+          },
+          "400": {
+            "description": "Missing name or isTeamSport, or sport with this name already exists"
+          }
+        },
+        "summary": "Create a new sport",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/sports/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of sports.",
+            "schema": {
+              "items": {
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "isTeamSport": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all sports",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Filter by city",
+            "in": "query",
+            "name": "city",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Sort by attribute (name, followers, rank, createdAt)",
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Sort order (asc, desc)",
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Limit number of results",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Expand members",
+            "in": "query",
+            "name": "expand",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of all teams"
+          }
+        },
+        "summary": "Get all teams",
+        "tags": [
+          "Teams"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "logoUrl": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "sport_id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "sport_id",
+                "city"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Team created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Create a new team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a single team"
+          },
+          "404": {
+            "description": "Team not found"
+          }
+        },
+        "summary": "Get a team by ID",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/applications": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of applicants"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Get team applications",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/applications/{user_id}/respond": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "action": {
+                  "description": "accept or decline",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "action"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response sent successfully"
+          },
+          "400": {
+            "description": "Invalid action"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Application not found"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Respond to a team application",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/apply": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application sent successfully"
+          },
+          "400": {
+            "description": "You have already applied or are a member"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Apply to a team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/follow": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Follow status toggled"
+          },
+          "404": {
+            "description": "Team or user not found"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Toggle follow a team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/members/{user_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member removed successfully"
+          },
+          "400": {
+            "description": "Captain cannot remove themselves"
+          },
+          "403": {
+            "description": "Only the captain can remove members"
+          },
+          "404": {
+            "description": "Team or member not found"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Remove a team member",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/tournaments": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of tournaments"
+          }
+        },
+        "summary": "Get all tournaments",
+        "tags": [
+          "Legacy - Tournaments"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "game": {
+                  "type": "string"
+                },
+                "maxParticipants": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "game",
+                "status",
+                "maxParticipants",
+                "startDate"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Tournament created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          }
+        },
+        "summary": "Create a new tournament",
+        "tags": [
+          "Legacy - Tournaments"
+        ]
+      }
+    },
+    "/api/v1/tournaments/{tournament_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournament_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single tournament"
+          },
+          "404": {
+            "description": "Tournament not found"
+          }
+        },
+        "summary": "Get a specific tournament",
+        "tags": [
+          "Legacy - Tournaments"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Returns a list of all users"
+          }
+        },
+        "summary": "Get all users",
+        "tags": [
+          "Users"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "age": {
+                  "type": "integer"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "gender": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "nickname",
+                "email",
+                "role",
+                "city",
+                "firstName",
+                "lastName",
+                "password"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          },
+          "400": {
+            "description": "Missing data or nickname/email already exists"
+          }
+        },
+        "summary": "Create a new user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "parameters": [
+          {
+            "default": "Bearer YOUR_JWT_TOKEN",
+            "description": "The user's JWT token.",
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Include teams in the response",
+            "in": "query",
+            "name": "include_teams",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "description": "Include followed teams in the response",
+            "in": "query",
+            "name": "include_follows",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the current user"
+          }
+        },
+        "summary": "Get current user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of active user sessions.",
+            "schema": {
+              "items": {
+                "properties": {
+                  "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer"
+                  },
+                  "ipAddress": {
+                    "type": "string"
+                  },
+                  "isCurrent": {
+                    "type": "boolean"
+                  },
+                  "lastActiveAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "userAgent": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Get all active sessions for the current user",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions/all-except-current": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "All other sessions have been deleted."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Delete all sessions except the current one",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions/{session_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "The ID of the session to delete.",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session deleted successfully."
+          },
+          "400": {
+            "description": "Cannot delete the currently active session."
+          },
+          "404": {
+            "description": "Session not found or permission denied."
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Delete a specific session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Include teams in the response",
+            "in": "query",
+            "name": "include_teams",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "description": "Include followed teams in the response",
+            "in": "query",
+            "name": "include_follows",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a single user"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "summary": "Get a user by ID",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "age": {
+                  "type": "integer"
+                },
+                "avatarUrl": {
+                  "type": "string"
+                },
+                "bio": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "coverImageUrl": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "gender": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                },
+                "nickname": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "sports": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          },
+          "400": {
+            "description": "No data provided or nickname/email already exists"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "summary": "Update a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/avatar": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "name": "avatar",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded successfully"
+          },
+          "400": {
+            "description": "No avatar file provided"
+          },
+          "500": {
+            "description": "An internal error occurred during avatar upload"
+          }
+        },
+        "summary": "Upload an avatar for a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/cover": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "name": "cover",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cover image uploaded successfully"
+          },
+          "400": {
+            "description": "No cover file provided"
+          },
+          "500": {
+            "description": "An internal error occurred during cover upload"
+          }
+        },
+        "summary": "Upload a cover image for a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The openapi.json file"
+          },
+          "404": {
+            "description": "File not found"
+          }
+        },
+        "summary": "Serve the static openapi.json file",
+        "tags": [
+          "Index"
+        ]
+      }
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0"
+}

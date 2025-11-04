@@ -1,0 +1,8 @@
+{
+  "previews": [
+    {
+      "id": "web",
+      "startUrl": "/api/docs"
+    }
+  ]
+}
