@@ -1,0 +1,14 @@
+{
+    "achilleshr.runonsave": {
+      "autoClearConsole": false,
+      "message": "▶ Run On Save: autopush",
+      "commands": [
+        {
+          "match": ".*",
+          "notMatch": "(^|/)(\\.git|node_modules|\\.vscode|dist|build)/.*$",
+          "cmd": "bash -lc \"cd '${workspaceFolder}' && BR=$(git rev-parse --abbrev-ref HEAD) && git add . && (git diff --cached --quiet && echo 'No changes to commit' || (git commit -m 'auto: ${fileBasename} saved at $(date -u +%Y-%m-%dT%H:%M:%SZ)' && git push origin $BR))\""
+        }
+      ]
+    }
+  }
+  
