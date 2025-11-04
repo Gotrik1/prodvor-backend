@@ -7,28 +7,20 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flasgger import Swagger
+from dotenv import load_dotenv
+
+load_dotenv() # Загружает переменные из .env файла
 
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
 
 def create_app(init_swagger=True):
-    # --- ВРЕМЕННЫЙ ШАГ ДЛЯ ОТЛАДКИ ---
-    # Пароль 'postgres' вставлен напрямую, так как файл .env сбрасывается.
-    print("--- ИСПОЛЬЗUЮТСЯ ЖЕСТКО ЗАДАННЫЕ ЗНАЧЕНИЯ (ПАРОЛЬ 'postgres' ВКЛЮЧЕН) ---")
-    
-    database_url = "postgresql://postgres.ppzkctfvrxqlcrpwtuuu:postgres@aws-1-eu-west-1.pooler.supabase.com:5432/postgres"
-    supabase_url = "https://ppzkctfvrxqlcrpwtuuu.supabase.co"
-    supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwemtjdGZ2cnhxbGNycHd0dXV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTg5OTI3MCwiZXhwIjoyMDc3NDc1MjcwfQ.EH7NQSbnmXMRrdUrLhUy9bBlLcB7zylMHkXBIn8TqV4"
-    secret_key = "a_very_secret_key"
-    refresh_secret_key = "another_very_secret_key"
-
-    os.environ['DATABASE_URL'] = database_url
-    os.environ['SUPABASE_URL'] = supabase_url
-    os.environ['SUPABASE_KEY'] = supabase_key
-    os.environ['SECRET_KEY'] = secret_key
-    os.environ['REFRESH_SECRET_KEY'] = refresh_secret_key
-    # --- КОНЕЦ ВРЕМЕННОГО ШАГА ДЛЯ ОТЛАДКИ ---
+    database_url = os.getenv("DATABASE_URL")
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+    secret_key = os.getenv("SECRET_KEY")
+    refresh_secret_key = os.getenv("REFRESH_SECRET_KEY")
 
     app = Flask(__name__, static_folder='../static')
     CORS(app, supports_credentials=True, resources={
@@ -37,7 +29,6 @@ def create_app(init_swagger=True):
                 "https://6000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev/",
                 "https://9000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev/",
                 "http://localhost:3000"
-                "*"
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
