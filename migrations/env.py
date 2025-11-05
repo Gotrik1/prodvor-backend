@@ -27,7 +27,7 @@ except Exception as e:
 # -------------------------------------------------------
 config = context.config
 
-# Логирование Alembic
+# Настройка логирования Alembic
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
@@ -44,13 +44,16 @@ with app.app_context():
     # 4. Миграции
     # ---------------------------------------------------
     def run_migrations_offline() -> None:
-        """Run migrations in 'offline' mode."""
-        # Берём URL из alembic.ini или из env, если там есть DATABASE_URL
+        """Run migrations in 'offline' mode'."""
+        # Берём URL из env или конфигурации приложения
         url = (
             os.getenv("DATABASE_URL")
             or config.get_main_option("sqlalchemy.database.uri")
             or app.config.get("SQLALCHEMY_DATABASE_URI")
         )
+
+        print(f"🚀 Running offline migrations using DB URL: {url or '❌ Not found'}")
+
         context.configure(
             url=url,
             target_metadata=target_metadata,
@@ -61,16 +64,20 @@ with app.app_context():
         with context.begin_transaction():
             context.run_migrations()
 
+
     def run_migrations_online() -> None:
         """Run migrations in 'online' mode."""
         configuration = config.get_section(config.config_ini_section, {}) or {}
 
-        # приоритет: DATABASE_URL → SQLALCHEMY_DATABASE_URI → alembic.ini
+        # Приоритет: DATABASE_URL → SQLALCHEMY_DATABASE_URI → alembic.ini
         db_url = (
             os.getenv("DATABASE_URL")
             or app.config.get("SQLALCHEMY_DATABASE_URI")
             or config.get_main_option("sqlalchemy.database.uri")
         )
+
+        print(f"🚀 Running online migrations using DB URL: {db_url or '❌ Not found'}")
+
         if db_url:
             configuration["sqlalchemy.url"] = db_url
 
@@ -85,6 +92,7 @@ with app.app_context():
 
             with context.begin_transaction():
                 context.run_migrations()
+
 
     if context.is_offline_mode():
         run_migrations_offline()
