@@ -1,7 +1,7 @@
 def init_routes(app):
     from . import users, sports, legacy, teams, auth, sessions
 
-    app.register_blueprint(auth.auth_bp, url_prefix='/api/v1/auth')
+    app.register_blueprint(auth.auth_bp, url_prefix='/api/v1') # ИЗМЕНЕНО
     app.register_blueprint(users.users_bp, url_prefix='/api/v1')
     app.register_blueprint(sports.sports_bp, url_prefix='/api/v1')
     app.register_blueprint(legacy.legacy_bp, url_prefix='/api/v1')

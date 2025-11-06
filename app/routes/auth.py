@@ -12,7 +12,7 @@ bcrypt = Bcrypt()
 def hash_token(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/auth/register', methods=['POST'])
 def register():
     """
     Register a new user
@@ -93,7 +93,7 @@ def register():
 
     return jsonify(new_user.to_dict()), 201
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/auth/login', methods=['POST'])
 def login():
     """
     Login a user
@@ -155,7 +155,7 @@ def login():
     
     return jsonify({'error': 'Invalid credentials'}), 401
 
-@auth_bp.route('/refresh', methods=['POST'])
+@auth_bp.route('/auth/refresh', methods=['POST'])
 def refresh():
     """
     Refresh access token
@@ -203,7 +203,7 @@ def refresh():
 
     return jsonify({'accessToken': new_access_token})
 
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route('/auth/logout', methods=['POST'])
 def logout():
     """
     Logout a user
