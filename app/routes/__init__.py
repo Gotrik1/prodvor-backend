@@ -1,9 +1,6 @@
-def init_routes(app):
-    from . import users, sports, legacy, teams, auth, sessions
+# Этот файл делает "блюпринты" доступными для импорта как `from app.routes import ...`
 
-    app.register_blueprint(auth.auth_bp, url_prefix='/api/v1') # ИЗМЕНЕНО
-    app.register_blueprint(users.users_bp, url_prefix='/api/v1')
-    app.register_blueprint(sports.sports_bp, url_prefix='/api/v1')
-    app.register_blueprint(legacy.legacy_bp, url_prefix='/api/v1')
-    app.register_blueprint(teams.teams_bp, url_prefix='/api/v1')
-    app.register_blueprint(sessions.sessions_bp, url_prefix='/api/v1/users')
+from .auth import auth_bp
+from .sessions import sessions_bp
+from .uploads import uploads_bp
+from .teams import teams_bp

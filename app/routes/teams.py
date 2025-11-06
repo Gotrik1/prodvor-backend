@@ -1,7 +1,8 @@
 
 from flask import Blueprint, jsonify, request
 from app import db
-from app.models import Team, TeamApplication, User, Sport, TeamMembers, TeamFollowers
+# from app.models import Team, TeamApplication, User, Sport, TeamMembers, TeamFollowers
+from app.models import Team, User, Sport, TeamMembers, TeamFollowers
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, desc, asc
@@ -254,141 +255,141 @@ def remove_team_member(team_id, user_id):
 
     return jsonify({"success": True, "message": "Player removed successfully"}), 200
 
-@teams_bp.route('/teams/<int:team_id>/apply', methods=['POST'])
-@jwt_required()
-def apply_to_team(team_id):
-    """
-    Apply to a team
-    ---
-    tags:
-      - Teams
-    security:
-      - Bearer: []
-    parameters:
-      - name: team_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Application sent successfully
-      400:
-        description: You have already applied or are a member
-    """
-    request.get_json(silent=True)
-    user_id = int(get_jwt_identity())
-    team = db.get_or_404(Team, team_id)
+# @teams_bp.route('/teams/<int:team_id>/apply', methods=['POST'])
+# @jwt_required()
+# def apply_to_team(team_id):
+#     """
+#     Apply to a team
+#     ---
+#     tags:
+#       - Teams
+#     security:
+#       - Bearer: []
+#     parameters:
+#       - name: team_id
+#         in: path
+#         required: true
+#         type: integer
+#     responses:
+#       200:
+#         description: Application sent successfully
+#       400:
+#         description: You have already applied or are a member
+#     """
+#     request.get_json(silent=True)
+#     user_id = int(get_jwt_identity())
+#     team = db.get_or_404(Team, team_id)
+#
+#     existing_application = TeamApplication.query.filter_by(teamId=team_id, userId=user_id, status='pending').first()
+#     if existing_application:
+#         return jsonify({"error": "You have already applied to this team"}), 400
+#
+#     is_member = db.session.query(TeamMembers).filter_by(userId=user_id, teamId=team_id).first()
+#     if is_member:
+#         return jsonify({"error": "You are already a member of this team"}), 400
+#
+#     new_application = TeamApplication(teamId=team_id, userId=user_id)
+#     db.session.add(new_application)
+#     db.session.commit()
+#
+#     return jsonify({"success": True, "message": "Заявка успешно отправлена"}), 200
 
-    existing_application = TeamApplication.query.filter_by(teamId=team_id, userId=user_id, status='pending').first()
-    if existing_application:
-        return jsonify({"error": "You have already applied to this team"}), 400
+# @teams_bp.route('/teams/<int:team_id>/applications', methods=['GET'])
+# @jwt_required()
+# def get_team_applications(team_id):
+#     """
+#     Get team applications
+#     ---
+#     tags:
+#       - Teams
+#     security:
+#       - Bearer: []
+#     parameters:
+#       - name: team_id
+#         in: path
+#         required: true
+#         type: integer
+#     responses:
+#       200:
+#         description: Returns a list of applicants
+#       403:
+#         description: Forbidden
+#     """
+#     user_id = get_jwt_identity()
+#     team = db.get_or_404(Team, team_id)
+#
+#     if team.captainId != int(user_id):
+#         return jsonify({"error": "Forbidden"}), 403
+#
+#     applications = TeamApplication.query.filter_by(teamId=team_id, status='pending').all()
+#     applicants = [User.query.get(app.userId).to_dict() for app in applications]
+#
+#     return jsonify(applicants), 200
 
-    is_member = db.session.query(TeamMembers).filter_by(userId=user_id, teamId=team_id).first()
-    if is_member:
-        return jsonify({"error": "You are already a member of this team"}), 400
-
-    new_application = TeamApplication(teamId=team_id, userId=user_id)
-    db.session.add(new_application)
-    db.session.commit()
-
-    return jsonify({"success": True, "message": "Заявка успешно отправлена"}), 200
-
-@teams_bp.route('/teams/<int:team_id>/applications', methods=['GET'])
-@jwt_required()
-def get_team_applications(team_id):
-    """
-    Get team applications
-    ---
-    tags:
-      - Teams
-    security:
-      - Bearer: []
-    parameters:
-      - name: team_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Returns a list of applicants
-      403:
-        description: Forbidden
-    """
-    user_id = get_jwt_identity()
-    team = db.get_or_404(Team, team_id)
-
-    if team.captainId != int(user_id):
-        return jsonify({"error": "Forbidden"}), 403
-
-    applications = TeamApplication.query.filter_by(teamId=team_id, status='pending').all()
-    applicants = [User.query.get(app.userId).to_dict() for app in applications]
-
-    return jsonify(applicants), 200
-
-@teams_bp.route('/teams/<int:team_id>/applications/<int:user_id>/respond', methods=['POST'])
-@jwt_required()
-def respond_to_application(team_id, user_id):
-    """
-    Respond to a team application
-    ---
-    tags:
-      - Teams
-    security:
-      - Bearer: []
-    parameters:
-      - name: team_id
-        in: path
-        required: true
-        type: integer
-      - name: user_id
-        in: path
-        required: true
-        type: integer
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - action
-          properties:
-            action:
-              type: string
-              description: "accept or decline"
-    responses:
-      200:
-        description: Response sent successfully
-      400:
-        description: Invalid action
-      403:
-        description: Forbidden
-      404:
-        description: Application not found
-    """
-    captain_id = get_jwt_identity()
-    team = db.get_or_404(Team, team_id)
-
-    if team.captainId != int(captain_id):
-        return jsonify({"error": "Forbidden"}), 403
-
-    application = TeamApplication.query.filter_by(teamId=team_id, userId=user_id, status='pending').first()
-    if not application:
-        return jsonify({"error": "Application not found"}), 404
-
-    data = request.get_json()
-    action = data.get('action')
-
-    if action not in ['accept', 'decline']:
-        return jsonify({"error": "Invalid action"}), 400
-
-    if action == 'accept':
-        team_member = TeamMembers.insert().values(userId=user_id, teamId=team_id)
-        db.session.execute(team_member)
-        db.session.delete(application)
-        db.session.commit()
-        return jsonify({"success": True, "message": "Решение принято"}), 200
-    
-    elif action == 'decline':
-        db.session.delete(application)
-        db.session.commit()
-        return jsonify({"success": True, "message": "Решение принято"}), 200
+# @teams_bp.route('/teams/<int:team_id>/applications/<int:user_id>/respond', methods=['POST'])
+# @jwt_required()
+# def respond_to_application(team_id, user_id):
+#     """
+#     Respond to a team application
+#     ---
+#     tags:
+#       - Teams
+#     security:
+#       - Bearer: []
+#     parameters:
+#       - name: team_id
+#         in: path
+#         required: true
+#         type: integer
+#       - name: user_id
+#         in: path
+#         required: true
+#         type: integer
+#       - in: body
+#         name: body
+#         required: true
+#         schema:
+#           type: object
+#           required:
+#             - action
+#           properties:
+#             action:
+#               type: string
+#               description: "accept or decline"
+#     responses:
+#       200:
+#         description: Response sent successfully
+#       400:
+#         description: Invalid action
+#       403:
+#         description: Forbidden
+#       404:
+#         description: Application not found
+#     """
+#     captain_id = get_jwt_identity()
+#     team = db.get_or_404(Team, team_id)
+#
+#     if team.captainId != int(captain_id):
+#         return jsonify({"error": "Forbidden"}), 403
+#
+#     application = TeamApplication.query.filter_by(teamId=team_id, userId=user_id, status='pending').first()
+#     if not application:
+#         return jsonify({"error": "Application not found"}), 404
+#
+#     data = request.get_json()
+#     action = data.get('action')
+#
+#     if action not in ['accept', 'decline']:
+#         return jsonify({"error": "Invalid action"}), 400
+#
+#     if action == 'accept':
+#         team_member = TeamMembers.insert().values(userId=user_id, teamId=team_id)
+#         db.session.execute(team_member)
+#         db.session.delete(application)
+#         db.session.commit()
+#         return jsonify({"success": True, "message": "Решение принято"}), 200
+#     
+#     elif action == 'decline':
+#         db.session.delete(application)
+#         db.session.commit()
+#         return jsonify({"success": True, "message": "Решение принято"}), 200
