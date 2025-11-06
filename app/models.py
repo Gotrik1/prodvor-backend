@@ -69,7 +69,7 @@ class User(db.Model):
             all_teams = {team.id: team for team in self.member_of_teams}
             for team in self.captain_of_teams:
                 all_teams[team.id] = team
-            data['teams'] = [team.to_dict(expand=True) for team in sorted(all_teams.values(), key=lambda x: x.id)]
+            data['teams'] = [team.to_simple_dict() for team in sorted(all_teams.values(), key=lambda x: x.id)]
         
         if include_follows:
             data['followedTeams'] = [team.to_dict(expand=False) for team in self.followed_teams.all()]
@@ -126,6 +126,14 @@ class Team(db.Model):
     mvpPlayer = db.relationship('User', foreign_keys=[mvpPlayerId])
     topScorerPlayer = db.relationship('User', foreign_keys=[topScorerPlayerId])
 
+    def to_simple_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'logoUrl': self.logoUrl,
+            'sport': self.sport.to_dict() if self.sport else None
+        }
+
     def to_dict(self, expand=False):
         # Base data is always included
         data = {
@@ -135,7 +143,7 @@ class Team(db.Model):
             'sport': self.sport.to_dict() if self.sport else None,
             'city': self.city,
             'captainId': self.captainId,
-            'followersCount': len(self.followers)
+            'followersCount': self.followers.count()
         }
 
         if not expand:
@@ -241,7 +249,7 @@ class CoachProfile(db.Model):
         }
 
 class Tournament(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=Tы)
     name = db.Column(db.String(150), nullable=False)
     game = db.Column(db.String(100))
     status = db.Column(db.String(50))

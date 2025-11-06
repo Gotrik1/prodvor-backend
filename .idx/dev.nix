@@ -32,7 +32,7 @@
       previews = {
         web = {
           # В IDX здесь просто команда; venv активируй в стартовом скрипте
-          command = [ "bash" "-c" "python main.py" ];
+          command = [ "bash" "-c" ".venv/bin/python main.py" ];
           manager = "web";
         };
       };
