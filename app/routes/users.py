@@ -5,7 +5,7 @@ import traceback
 from flask import Blueprint, jsonify, request
 from app import db
 from app.models import User, PlayerProfile, RefereeProfile, CoachProfile, Sport
-from app.utils.decorators import token_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from supabase import create_client
 from werkzeug.datastructures import FileStorage
 from werkzeug.security import generate_password_hash
@@ -32,20 +32,16 @@ def _delete_old_file_from_storage(supabase_client, bucket_name, old_url):
         traceback.print_exc()
 
 @users_bp.route('/users/me', methods=['GET'])
-@token_required
-def get_me(current_user):
+@jwt_required()
+def get_me():
     """
     Get current user
     ---
     tags:
       - Users
+    security:
+      - bearerAuth: []
     parameters:
-      - name: Authorization
-        in: header
-        required: true
-        type: string
-        description: The user's JWT token.
-        default: Bearer YOUR_JWT_TOKEN
       - name: include_teams
         in: query
         type: boolean
@@ -59,10 +55,20 @@ def get_me(current_user):
     responses:
       200:
         description: Returns the current user
+      401:
+        description: Unauthorized
+      404:
+        description: User not found
     """
+    user_id = get_jwt_identity()
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     include_teams_param = request.args.get('include_teams', 'false').lower() == 'true'
     include_follows_param = request.args.get('include_follows', 'false').lower() == 'true'
-    return jsonify(current_user.to_dict(include_teams=include_teams_param, include_follows=include_follows_param)), 200
+    return jsonify(user.to_dict(include_teams=include_teams_param, include_follows=include_follows_param)), 200
 
 @users_bp.route('/users', methods=['GET'])
 def get_users():
