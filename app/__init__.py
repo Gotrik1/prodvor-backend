@@ -23,18 +23,15 @@ def create_app(init_swagger=True):
     refresh_secret_key = os.getenv("REFRESH_SECRET_KEY")
 
     app = Flask(__name__, static_folder='../static')
-    CORS(app, supports_credentials=True, resources={
-        r"/api/*": {
-            "origins": [
-                "https://6000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
-                "https://9000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
-                "http://localhost:3000",
-                "https://prodvor.website"
-            ],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": "*" # Временно разрешаем все заголовки для диагностики
-        }
-    })
+    # Применяем CORS ко всему приложению для проверки
+    CORS(app, 
+         supports_credentials=True, 
+         origins=[
+            "https://6000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
+            "https://9000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
+            "http://localhost:3000",
+            "https://prodvor.website"
+         ])
 
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
