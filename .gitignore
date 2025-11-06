@@ -124,3 +124,4 @@ dmypy.json
 
 # Cython cache
 .cython_cache/
+local.main.py
