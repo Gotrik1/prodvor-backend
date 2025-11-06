@@ -126,3 +126,4 @@ dmypy.json
 .cython_cache/
 
 requirements.txt
+/home/user/prodvor-backend/main.py
