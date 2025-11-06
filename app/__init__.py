@@ -9,48 +9,36 @@ from flask_jwt_extended import JWTManager
 from flasgger import Swagger
 from dotenv import load_dotenv
 
-load_dotenv() # Загружает переменные из .env файла
+# Загружаем переменные из .env и .env.local (если есть)
+load_dotenv()
+load_dotenv(dotenv_path='.env.local')
+
+from app.config import CONFIG_MAP
 
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
 
 def create_app(init_swagger=True):
-    database_url = os.getenv("DATABASE_URL")
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
-    secret_key = os.getenv("SECRET_KEY")
-    refresh_secret_key = os.getenv("REFRESH_SECRET_KEY")
+    env = os.getenv('FLASK_ENV', 'development')
+    config = CONFIG_MAP.get(env, 'development')
 
     app = Flask(__name__, static_folder='../static')
+    app.config.from_object(config)
+
+    # Настраиваем CORS на основе конфигурации
     CORS(app, supports_credentials=True, resources={
         r"/api/v1/*": {
-            "origins": [
-                "https://6000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
-                "https://9000-firebase-prodvor-landin-3110-1761908712682.cluster-3gc7bglotjgwuxlqpiut7yyqt4.cloudworkstations.dev",
-                "http://localhost:3000",
-                "https://prodvor.website"
-            ],
+            "origins": app.config['CORS_ORIGINS'],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"]
         }
     })
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-    }
-    
-    # --- JWT Configuration ---
-    app.config["JWT_SECRET_KEY"] = secret_key
+    # Настройки JWT (уже загружены из config)
     app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-    
-    app.config['SECRET_KEY'] = secret_key # Legacy
-    app.config['REFRESH_SECRET_KEY'] = refresh_secret_key
 
-    # --- Flasgger (Swagger) Configuration ---
+    # Настройки Swagger (если нужно)
     if init_swagger:
         app.config['SWAGGER'] = {
             'title': 'Prodvor API',
@@ -58,13 +46,14 @@ def create_app(init_swagger=True):
             "specs_route": "/apidocs/"
         }
         Swagger(app)
-    # --- End Flasgger Configuration ---
 
+    # Инициализация расширений
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt = JWTManager(app)
 
+    # Регистрация маршрутов
     from .routes import init_routes
     init_routes(app)
 
