@@ -8,12 +8,34 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/users', methods=['GET'])
 def get_users():
+    """
+    Get all users
+    ---
+    tags:
+        - Users
+    responses:
+        '200':
+            description: A list of users.
+    """
     users = User.query.all()
     return jsonify([user.to_dict() for user in users])
 
 @users_bp.route('/users/me', methods=['GET'])
 @jwt_required()
 def get_me():
+    """
+    Get current user
+    ---
+    tags:
+        - Users
+    security:
+        - bearerAuth: []
+    responses:
+        '200':
+            description: The current user's profile.
+        '404':
+            description: User not found.
+    """
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user:
@@ -24,6 +46,22 @@ def get_me():
 
 @users_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
+    """
+    Get a user by ID
+    ---
+    tags:
+        - Users
+    parameters:
+        -   name: user_id
+            in: path
+            required: true
+            type: integer
+    responses:
+        '200':
+            description: A single user's profile.
+        '404':
+            description: User not found.
+    """
     user = User.query.get_or_404(user_id)
     include_teams = request.args.get('include_teams', 'false').lower() == 'true'
     return jsonify(user.to_dict(include_teams=include_teams, include_sports=True))
@@ -31,8 +69,42 @@ def get_user(user_id):
 @users_bp.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
+    """
+    Update a user
+    ---
+    tags:
+        - Users
+    security:
+        - bearerAuth: []
+    parameters:
+        -   name: user_id
+            in: path
+            required: true
+            type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              nickname:
+                type: string
+              city:
+                type: string
+              sports:
+                type: array
+                items:
+                  type: string
+    responses:
+        '200':
+            description: User updated successfully.
+        '400':
+            description: No data provided.
+        '403':
+            description: Forbidden.
+    """
     current_user_id = get_jwt_identity()
-    # Assuming 'admin' role can edit any user. Add your own role management logic.
     user_to_update = User.query.get_or_404(user_id)
     current_user = User.query.get(current_user_id)
 
@@ -43,12 +115,9 @@ def update_user(user_id):
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    # Update fields
     user_to_update.nickname = data.get('nickname', user_to_update.nickname)
     user_to_update.city = data.get('city', user_to_update.city)
-    # ... add other updatable fields as needed ...
 
-    # Handle sports update
     if 'sports' in data and isinstance(data['sports'], list):
         user_to_update.sports.clear()
         sports_to_add = Sport.query.filter(Sport.id.in_(data['sports'])).all()
@@ -61,6 +130,31 @@ def update_user(user_id):
 @users_bp.route('/users/avatar', methods=['POST'])
 @jwt_required()
 def update_avatar():
+    """
+    Upload an avatar for a user
+    ---
+    tags:
+        - Users
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileUrl]
+              properties:
+                fileUrl:
+                  type: string
+    responses:
+        '200':
+            description: Avatar updated successfully.
+        '400':
+            description: Missing fileUrl.
+        '404':
+            description: User not found.
+    """
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user:

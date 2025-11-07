@@ -1,0 +1,1032 @@
+{
+  "definitions": {
+    "PostNew": {
+      "properties": {
+        "authorId": {
+          "type": "integer"
+        },
+        "content": {
+          "type": "string"
+        },
+        "teamId": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "authorId",
+        "content"
+      ],
+      "type": "object"
+    },
+    "TournamentNew": {
+      "properties": {
+        "game": {
+          "type": "string"
+        },
+        "maxParticipants": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "startDate": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "game",
+        "status",
+        "maxParticipants",
+        "startDate"
+      ],
+      "type": "object"
+    }
+  },
+  "info": {
+    "description": "A RESTful API for a sports team and player matching platform.",
+    "title": "Sport Matching API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Welcome message",
+            "schema": {
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "summary": "Welcome endpoint for the legacy API.",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/achievements": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of achievements.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Achievement"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all achievements",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticates a user and returns access and refresh tokens.<br/>",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "email": {
+                    "example": "user@example.com",
+                    "type": "string"
+                  },
+                  "password": {
+                    "example": "password123",
+                    "format": "password",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "User Login",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Invalidates the user's refresh token.<br/>",
+        "responses": {
+          "200": {
+            "description": "Successfully logged out."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Logout user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Uses a valid refresh token to get a new access token.<br/>",
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully."
+          },
+          "401": {
+            "description": "Invalid or expired refresh token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Refresh access token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Creates a new user and a corresponding profile based on the specified role.<br/>",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "player",
+                      "referee",
+                      "coach"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password",
+                  "nickname",
+                  "role"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully."
+          },
+          "400": {
+            "description": "Missing required fields."
+          },
+          "409": {
+            "description": "User with this email or nickname already exists."
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/playgrounds": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of playgrounds.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Playground"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all playgrounds",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of posts.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Post"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Retrieve all posts.",
+        "tags": [
+          "Legacy"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PostNew"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Post created successfully"
+          },
+          "400": {
+            "description": "Missing data or author/team not found"
+          }
+        },
+        "summary": "Create a new post.",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/quests": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of quests.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Quest"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all quests",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/sponsors": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of sponsors.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Sponsor"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all sponsors",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/sports": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "isTeamSport": {
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "isTeamSport"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sport created successfully"
+          },
+          "400": {
+            "description": "Missing name or isTeamSport, or sport with this name already exists"
+          }
+        },
+        "summary": "Create a new sport",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/sports/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of sports.",
+            "schema": {
+              "items": {
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "isTeamSport": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get all sports",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of teams."
+          }
+        },
+        "summary": "Get all teams",
+        "tags": [
+          "Teams"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "logoUrl": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "sport_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "sport_id",
+                  "city"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Team created successfully."
+          },
+          "400": {
+            "description": "Missing required fields."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single team."
+          },
+          "404": {
+            "description": "Team not found."
+          }
+        },
+        "summary": "Get a team by ID",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/applications": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of user applications."
+          },
+          "403": {
+            "description": "Forbidden."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get team applications",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/applications/{user_id}/respond": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "action": {
+                    "enum": [
+                      "accept",
+                      "decline"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Response recorded."
+          },
+          "400": {
+            "description": "Invalid action."
+          },
+          "403": {
+            "description": "Forbidden."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Respond to a team application",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/apply": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Application sent successfully."
+          },
+          "409": {
+            "description": "Application already sent."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Apply to a team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/follow": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Follow status toggled."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Toggle follow a team",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/logo": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "fileUrl": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fileUrl"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Logo updated successfully."
+          },
+          "400": {
+            "description": "Missing fileUrl."
+          },
+          "403": {
+            "description": "Only the captain can update."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update team logo",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/members/{user_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player removed successfully."
+          },
+          "400": {
+            "description": "Captain cannot remove themselves."
+          },
+          "403": {
+            "description": "Only the team captain can remove members."
+          },
+          "404": {
+            "description": "Player is not a member of this team."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove a team member",
+        "tags": [
+          "Teams"
+        ]
+      }
+    },
+    "/api/v1/tournaments": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of tournaments.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Tournament"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Retrieve all tournaments.",
+        "tags": [
+          "Legacy"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TournamentNew"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Tournament created successfully"
+          },
+          "400": {
+            "description": "Missing data"
+          }
+        },
+        "summary": "Create a new tournament.",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/tournaments/{tournament_id}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "ID of the tournament to retrieve",
+            "in": "path",
+            "name": "tournament_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournament found",
+            "schema": {
+              "$ref": "#/definitions/Tournament"
+            }
+          },
+          "404": {
+            "description": "Tournament not found"
+          }
+        },
+        "summary": "Retrieve a single tournament by its ID.",
+        "tags": [
+          "Legacy"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of users."
+          }
+        },
+        "summary": "Get all users",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/avatar": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "fileUrl": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fileUrl"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar updated successfully."
+          },
+          "400": {
+            "description": "Missing fileUrl."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Upload an avatar for a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The current user's profile."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get current user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A list of active sessions."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get all active sessions for the current user",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions/all-except-current": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Sessions deleted successfully."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete all sessions except the current one",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/me/sessions/{session_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session deleted successfully."
+          },
+          "403": {
+            "description": "Cannot delete the current session."
+          },
+          "404": {
+            "description": "Session not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a specific session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single user's profile."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        },
+        "summary": "Get a user by ID",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "type": "string"
+                  },
+                  "sports": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully."
+          },
+          "400": {
+            "description": "No data provided."
+          },
+          "403": {
+            "description": "Forbidden."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0"
+}

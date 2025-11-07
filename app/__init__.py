@@ -7,18 +7,17 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from flasgger import Swagger
 
-# Загрузка переменных окружения
 load_dotenv()
 
-# Инициализация расширений
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
 cors = CORS()
 jwt = JWTManager()
 
-def create_app():
+def create_app(init_swagger=True):
     """Фабрика для создания экземпляра Flask приложения."""
     app = Flask(__name__)
 
@@ -26,6 +25,23 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
+
+    # --- Конфигурация Swagger ---
+    app.config['SWAGGER'] = {
+        'title': 'Prodvor API',
+        'uiversion': 3,
+        'specs_route': '/apidocs/',
+        'swagger_ui_config': {
+            'urls': [
+                {
+                    'url': '/static/swagger.json',
+                    'name': 'API'
+                }
+            ]
+        }
+    }
+    if init_swagger:
+        Swagger(app)
 
     # --- Инициализация расширений в приложении ---
     db.init_app(app)
@@ -38,15 +54,22 @@ def create_app():
         # Импортируем модели, чтобы они были известны SQLAlchemy
         from . import models
 
-        # --- Регистрация Blueprints ---
+        # --- Регистрация ВСЕХ Blueprints ---
         from .routes.auth import auth_bp
         from .routes.users import users_bp
-        from .routes.uploads import uploads_bp
         from .routes.teams import teams_bp
+        from .routes.sessions import sessions_bp
+        from .routes.legacy import legacy_bp
+        from .routes.general import general_bp
+        from .routes.sports import sports_bp
 
-        app.register_blueprint(auth_bp, url_prefix='/api/v1')
-        app.register_blueprint(users_bp, url_prefix='/api/v1')
-        app.register_blueprint(uploads_bp, url_prefix='/api/v1')
-        app.register_blueprint(teams_bp, url_prefix='/api/v1')
+        url_prefix = '/api/v1'
+        app.register_blueprint(auth_bp, url_prefix=url_prefix)
+        app.register_blueprint(users_bp, url_prefix=url_prefix)
+        app.register_blueprint(teams_bp, url_prefix=url_prefix)
+        app.register_blueprint(sessions_bp, url_prefix=url_prefix)
+        app.register_blueprint(legacy_bp, url_prefix=url_prefix)
+        app.register_blueprint(general_bp, url_prefix=url_prefix)
+        app.register_blueprint(sports_bp, url_prefix=url_prefix)
 
     return app

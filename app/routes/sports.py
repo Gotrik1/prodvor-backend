@@ -12,7 +12,7 @@ def get_sports():
     tags:
         - Sports
     responses:
-        200:
+        '200':
             description: A list of sports.
             schema:
                 type: array
@@ -51,9 +51,9 @@ def create_sport():
                     isTeamSport:
                         type: boolean
     responses:
-        201:
+        '201':
             description: Sport created successfully
-        400:
+        '400':
             description: Missing name or isTeamSport, or sport with this name already exists
     """
     data = request.get_json()

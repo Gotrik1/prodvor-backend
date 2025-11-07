@@ -1,58 +1,78 @@
 
-import os
-import uuid
-from flask import request, jsonify, Blueprint
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from minio import Minio
-from datetime import timedelta
+# from flask import Blueprint, request, jsonify
+# from minio import Minio
+# from minio.error import S3Error
+# import os
+# from dotenv import load_dotenv
+# from datetime import timedelta
+# from app.models import Upload
+# from app import db
+# from flask_jwt_extended import jwt_required, get_jwt_identity
 
-uploads_bp = Blueprint('uploads', __name__)
+# load_dotenv()
 
-# MinIO Client Initialization
-minio_client = Minio(
-    os.environ.get("MINIO_ENDPOINT"),
-    access_key=os.environ.get("MINIO_ACCESS_KEY"),
-    secret_key=os.environ.get("MINIO_SECRET_KEY"),
-    secure=os.environ.get("MINIO_SECURE", "true").lower() == "true"
-)
+# uploads_bp = Blueprint('uploads', __name__)
 
-@uploads_bp.route('/uploads/request-url', methods=['POST'])
-@jwt_required()
-def request_upload_url():
-    user_id = get_jwt_identity()
-    content_type = request.json.get('contentType', 'application/octet-stream')
-    bucket_name = os.environ.get("MINIO_BUCKET")
-    
-    if not bucket_name:
-        return jsonify({"error": "MinIO bucket not configured"}), 500
+# # Инициализация MinIO клиента
+# minio_client = None
+# # try:
+# #     minio_client = Minio(
+# #         os.getenv("S3_ENDPOINT_URL"),
+# #         access_key=os.getenv("S3_ACCESS_KEY"),
+# #         secret_key=os.getenv("S3_SECRET_KEY"),
+# #         secure=os.getenv("S3_SECURE", "true").lower() == "true"
+# #     )
+# # except Exception as e:
+# #     print(f"Error initializing MinIO client: {e}")
 
-    # Generate a unique object name
-    object_name = f"uploads/{user_id}/{uuid.uuid4()}-{content_type.split('/')[-1]}"
 
-    try:
-        # Check if bucket exists, create if not
-        found = minio_client.bucket_exists(bucket_name)
-        if not found:
-            minio_client.make_bucket(bucket_name)
+# @uploads_bp.route('/uploads/request-url', methods=['POST'])
+# @jwt_required()
+# def request_upload_url():
+#     # if not minio_client:
+#     #     return jsonify({"error": "S3 storage is not configured"}), 500
 
-        # Generate presigned POST policy
-        post_policy = minio_client.presigned_post_policy(
-            bucket_name,
-            object_name,
-            expires=timedelta(minutes=15),
-            conditions=None, # You can add conditions here
-            user_metadata=None,
-        )
+#     # data = request.get_json()
+#     # filename = data.get('filename')
+#     # folder = data.get('folder', 'general') 
+#     # content_type = data.get('contentType', 'application/octet-stream')
+#     # userId = get_jwt_identity()
 
-        # Construct the final file URL
-        file_url = f"https://{os.environ.get('MINIO_ENDPOINT')}/{bucket_name}/{object_name}"
+#     # if not filename:
+#     #     return jsonify({"error": "Filename is required"}), 400
 
-        return jsonify({
-            "url": post_policy['url'],
-            "fields": post_policy['form_data'],
-            "fileUrl": file_url
-        })
+#     # bucket_name = os.getenv("S3_BUCKET_NAME")
+#     # object_name = f"{folder}/{userId}/{filename}"
 
-    except Exception as e:
-        print(f"Error generating presigned URL: {e}")
-        return jsonify({"error": "Could not generate upload URL."}), 500
+#     # try:
+#     #     # Проверяем, существует ли бакет, и создаем его, если нет
+#     #     found = minio_client.bucket_exists(bucket_name)
+#     #     if not found:
+#     #         minio_client.make_bucket(bucket_name)
+
+#     #     # Генерируем presigned URL для загрузки
+#     #     presigned_url = minio_client.presigned_put_object(
+#     #         bucket_name,
+#     #         object_name,
+#     #         expires=timedelta(hours=1),
+#     #     )
+
+#     #     # Сохраняем информацию о файле в БД
+#     #     new_upload = Upload(
+#     #         userId=userId,
+#     #         bucket=bucket_name,
+#     #         objectName=object_name,
+#     #         status='pending'
+#     #     )
+#     #     db.session.add(new_upload)
+#     #     db.session.commit()
+
+#     #     return jsonify({
+#     #         "uploadUrl": presigned_url,
+#     #         "fileId": new_upload.id,
+#     #         "objectName": object_name
+#     #     })
+
+#     # except S3Error as exc:
+#     #     return jsonify({"error": str(exc)}), 500
+#     pass

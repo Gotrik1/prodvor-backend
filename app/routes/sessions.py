@@ -1,75 +1,104 @@
 
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, current_user
+from flask import request, jsonify, Blueprint
 from app import db
 from app.models import UserSession
-from app.utils import hash_token # <<< Импортируем централизованную функцию
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 sessions_bp = Blueprint('sessions', __name__)
 
-# --- Функция hash_token удалена --- 
-
-@sessions_bp.route('/me/sessions', methods=['GET'])
-@jwt_required()
-def get_my_sessions():
+@sessions_bp.route('/users/me/sessions', methods=['GET'])
+@jwt_required(refresh=True)
+def get_user_sessions():
     """
     Get all active sessions for the current user
     ---
-    # ... (swagger docs)
+    tags:
+        - Sessions
+    security:
+        - bearerAuth: []
+    responses:
+        '200':
+            description: A list of active sessions.
     """
-    if not current_user:
-        return jsonify({"msg": "User not found or invalid token"}), 404
+    user_id = get_jwt_identity()
+    jti = get_jwt()['jti']
+    current_session = UserSession.query.filter_by(refreshToken=jti).first()
 
-    sessions = UserSession.query.filter_by(userId=current_user.id).order_by(UserSession.lastActiveAt.desc()).all()
+    sessions = UserSession.query.filter_by(userId=user_id).all()
+    
+    def session_to_dict(session, current_jti):
+        return {
+            "id": session.id,
+            "isCurrent": session.refreshToken == current_jti,
+            "userAgent": session.userAgent,
+            "ipAddress": session.ipAddress,
+            "lastActiveAt": session.lastActiveAt.isoformat(),
+            "createdAt": session.createdAt.isoformat()
+        }
 
-    return jsonify([session.to_dict() for session in sessions])
+    return jsonify([session_to_dict(s, jti) for s in sessions])
 
-
-@sessions_bp.route('/me/sessions/<int:session_id>', methods=['DELETE'])
-@jwt_required()
+@sessions_bp.route('/users/me/sessions/<int:session_id>', methods=['DELETE'])
+@jwt_required(refresh=True)
 def delete_session(session_id):
     """
-    Delete a specific session for the current user
+    Delete a specific session
     ---
-    # ... (swagger docs)
+    tags:
+        - Sessions
+    security:
+        - bearerAuth: []
+    parameters:
+        -   name: session_id
+            in: path
+            required: true
+            type: integer
+    responses:
+        '200':
+            description: Session deleted successfully.
+        '403':
+            description: Cannot delete the current session.
+        '404':
+            description: Session not found.
     """
-    if not current_user:
-        return jsonify({"msg": "User not found or invalid token"}), 404
-    
-    session_to_delete = UserSession.query.filter_by(id=session_id, userId=current_user.id).first()
+    user_id = get_jwt_identity()
+    jti = get_jwt()['jti']
 
-    if not session_to_delete:
-        return jsonify({'error': 'Session not found or you do not have permission to delete it'}), 404
+    session_to_delete = UserSession.query.filter_by(id=session_id, userId=user_id).first_or_404()
 
-    most_recent_session = UserSession.query.filter_by(userId=current_user.id).order_by(UserSession.lastActiveAt.desc()).first()
-    if session_to_delete.id == most_recent_session.id:
-         return jsonify({'error': 'Cannot delete the currently active session'}), 400
+    if session_to_delete.refreshToken == jti:
+        return jsonify({"error": "Cannot delete the current session."}), 403
 
     db.session.delete(session_to_delete)
     db.session.commit()
-    return jsonify({'success': True}), 200
+    return jsonify({"success": True, "message": "Session deleted successfully."})
 
-
-@sessions_bp.route('/me/sessions/all-except-current', methods=['DELETE'])
-@jwt_required()
+@sessions_bp.route('/users/me/sessions/all-except-current', methods=['DELETE'])
+@jwt_required(refresh=True)
 def delete_all_other_sessions():
     """
-    Delete all sessions for the current user except the current one
+    Delete all sessions except the current one
     ---
-    # ... (swagger docs)
+    tags:
+        - Sessions
+    security:
+        - bearerAuth: []
+    responses:
+        '200':
+            description: Sessions deleted successfully.
     """
-    if not current_user:
-        return jsonify({"msg": "User not found or invalid token"}), 404
+    user_id = get_jwt_identity()
+    jti = get_jwt()['jti']
 
-    sessions = UserSession.query.filter_by(userId=current_user.id).order_by(UserSession.lastActiveAt.desc()).all()
-    
-    if not sessions:
-        return jsonify({'success': True}), 200
+    sessions_to_delete = UserSession.query.filter(
+        UserSession.userId == user_id,
+        UserSession.refreshToken != jti
+    ).all()
 
-    current_session = sessions.pop(0)
-
-    for session in sessions:
+    for session in sessions_to_delete:
         db.session.delete(session)
     
     db.session.commit()
-    return jsonify({'success': True}), 200
+    return jsonify({"success": True, "message": f"{len(sessions_to_delete)} sessions deleted."})
+
+
