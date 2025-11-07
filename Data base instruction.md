@@ -92,7 +92,7 @@
 
     **.env (Правильный вариант):**
     ```
-    DATABASE_URL=postgresql+pg8000://prodvor:prodvor@100.83.57.49:5432/prodvor
+    DATABASE_URL=postgresql+://prodvor:prodvor@100.83.57.49:5432/prodvor
     ```
 
 5.  **Перезапустите сервер** (`CTRL+C` и заново `./start_server_with_tailscale.sh`), чтобы применились новые настройки.
