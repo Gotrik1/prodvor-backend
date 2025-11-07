@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 0. Завершаем старые процессы tailscaled, если они есть
+pkill -f tailscaled
+
 # 1. Запускаем демон Tailscale в фоновом режиме
 /home/user/.local/bin/tailscaled --tun=userspace-networking --socks5-server=localhost:1080 --statedir=/home/user/.tailscale/stated --socket=/home/user/.tailscale/tailscaled.sock & 
 

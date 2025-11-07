@@ -19,6 +19,8 @@
   env = {
     # Git всегда использует ssh из Nix
     GIT_SSH_COMMAND = "${pkgs.openssh}/bin/ssh";
+    # Добавляем прокси для Tailscale
+    ALL_PROXY = "socks5://localhost:1080/";
   };
 
   # IDX-интеграции
@@ -31,8 +33,8 @@
       enable = true;
       previews = {
         web = {
-          # В IDX здесь просто команда; venv активируй в стартовом скрипте
-          command = [ "bash" "-c" ".venv/bin/python main.py" ];
+          # Запускаем через наш новый скрипт, который поднимает Tailscale
+          command = [ "bash" "./start_server_with_tailscale.sh" ];
           manager = "web";
         };
       };
