@@ -8,3 +8,6 @@ sleep 5
 
 # 3. Поднимаем сетевой интерфейс Tailscale
 /home/user/.local/bin/tailscale --socket=/home/user/.tailscale/tailscaled.sock up --accept-routes --accept-dns=false
+
+# 4. Запускаем наш основной скрипт сервера
+./devserver.sh
