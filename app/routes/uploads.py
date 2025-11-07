@@ -1,46 +1,58 @@
-from flask import Blueprint, jsonify, request
+
+import os
+import uuid
+from flask import request, jsonify, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.s3_service import create_presigned_post_url
-from app.models import User
-from app import db
+from minio import Minio
+from datetime import timedelta
 
 uploads_bp = Blueprint('uploads', __name__)
 
+# MinIO Client Initialization
+minio_client = Minio(
+    os.environ.get("MINIO_ENDPOINT"),
+    access_key=os.environ.get("MINIO_ACCESS_KEY"),
+    secret_key=os.environ.get("MINIO_SECRET_KEY"),
+    secure=os.environ.get("MINIO_SECURE", "true").lower() == "true"
+)
+
 @uploads_bp.route('/uploads/request-url', methods=['POST'])
 @jwt_required()
-def get_upload_url():
-    """Генерирует presigned URL для загрузки файла напрямую в S3-хранилище."""
-    current_user_id = get_jwt_identity()
-    data = request.get_json()
-    file_type = data.get('contentType', 'image/jpeg')
-
-    # Простые проверки
-    if not file_type.startswith('image/'):
-        return jsonify({"error": "Допускаются только изображения"}), 400
-
-    response = create_presigned_post_url(user_id=current_user_id, file_type=file_type)
-
-    if response:
-        return jsonify(response), 200
-    else:
-        return jsonify({"error": "Не удалось сгенерировать URL для загрузки"}), 500
-
-@uploads_bp.route('/users/avatar', methods=['POST'])
-@jwt_required()
-def update_avatar():
-    """Обновляет URL аватара пользователя после успешной загрузки в S3."""
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-
-    data = request.get_json()
-    file_url = data.get('fileUrl')
-
-    if not file_url:
-        return jsonify({"error": "Отсутствует fileUrl"}), 400
+def request_upload_url():
+    user_id = get_jwt_identity()
+    content_type = request.json.get('contentType', 'application/octet-stream')
+    bucket_name = os.environ.get("MINIO_BUCKET")
     
-    # Здесь можно добавить проверку, что домен в file_url соответствует S3_ENDPOINT_URL
+    if not bucket_name:
+        return jsonify({"error": "MinIO bucket not configured"}), 500
 
-    user.avatarUrl = file_url
-    db.session.commit()
+    # Generate a unique object name
+    object_name = f"uploads/{user_id}/{uuid.uuid4()}-{content_type.split('/')[-1]}"
 
-    return jsonify({"message": "Аватар успешно обновлен", "avatarUrl": user.avatarUrl}), 200
+    try:
+        # Check if bucket exists, create if not
+        found = minio_client.bucket_exists(bucket_name)
+        if not found:
+            minio_client.make_bucket(bucket_name)
+
+        # Generate presigned POST policy
+        post_policy = minio_client.presigned_post_policy(
+            bucket_name,
+            object_name,
+            expires=timedelta(minutes=15),
+            conditions=None, # You can add conditions here
+            user_metadata=None,
+        )
+
+        # Construct the final file URL
+        file_url = f"https://{os.environ.get('MINIO_ENDPOINT')}/{bucket_name}/{object_name}"
+
+        return jsonify({
+            "url": post_policy['url'],
+            "fields": post_policy['form_data'],
+            "fileUrl": file_url
+        })
+
+    except Exception as e:
+        print(f"Error generating presigned URL: {e}")
+        return jsonify({"error": "Could not generate upload URL."}), 500

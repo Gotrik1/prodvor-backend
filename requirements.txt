@@ -17,13 +17,15 @@ MarkupSafe==2.1.5
 PyJWT==2.8.0
 python-dotenv==1.0.1
 SQLAlchemy==2.0.28
+psycopg2-binary
 zipp==3.18.1
+minio==7.2.7
 
 # --- Добавлено для перехода в прод ---
 gunicorn==22.0.0
 flask-limiter==3.5.1
 sentry-sdk[flask]==2.1.1
-prometheus-flask-exporter==0.23.2 # <-- ИСПРАВЛЕНО
+prometheus-flask-exporter==0.23.2
 argon2-cffi==23.1.0
 
 # --- Добавлено для загрузки файлов ---
