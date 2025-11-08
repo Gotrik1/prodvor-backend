@@ -15,7 +15,8 @@
     pkgs.entr
     pkgs.python3
     pkgs.lsof
-    pkgs.postgresql      # ← тут psql
+    pkgs.postgresql
+          # ← тут psql
     pkgs.tailscale     # Устанавливаем Tailscale
   ];
 
