@@ -23,7 +23,7 @@ services:
     volumes:
       - "/home/user/prodvor-backend/servises/postgres/18/docker:/var/lib/postgresql/18/docker"
       - ./postgres/conf/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./postgres/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - .servises//postgres/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     command:
       - "postgres"
       - "-c"
