@@ -17,7 +17,7 @@
     pkgs.lsof
     pkgs.postgresql
     pkgs.minio
-        pkgs.tailscale     # Устанавливаем Tailscale
+    pkgs.tailscale     # Устанавливаем Tailscale
   ];
 
   # Глобальные переменные окружения
