@@ -90,27 +90,6 @@ services:
         condition: service_healthy
     networks: [prodvor-network]
 
-  # ---------- Frontend PROD ----------
-  frontend:
-    profiles: ["prod"]
-    build:
-      context: ./frontend
-      dockerfile: ../frontend.Dockerfile
-    env_file:
-      - ./frontend/.env.production # см. обновлённый prod Dockerfile
-    container_name: frontend
-    environment:
-      NODE_ENV: production
-      NEXT_TELEMETRY_DISABLED: "1"
-      OTEL_SDK_DISABLED: "1"
-      HOST: "0.0.0.0"
-      PORT: "3000"
-    ports:
-      - "3000:3000"
-    depends_on:
-      backend:
-        condition: service_started
-    networks: [prodvor-network]
 
   # ---------- Nginx (для prod) ----------
   nginx:
