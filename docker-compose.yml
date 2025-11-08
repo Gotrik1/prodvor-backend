@@ -9,9 +9,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./servises/postgres/data:/var/lib/postgresql/data
-      - ./servises/postgres/conf/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./servises/postgres/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - postgres-data:/var/lib/postgresql/data
+      - ./services/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./services/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     command:
       - "postgres"
       - "-c"
@@ -35,9 +35,7 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - type: bind
-        source: ./servises/pgadmin
-        target: /var/lib/pgadmin
+      - pgadmin-data:/var/lib/pgadmin
     networks: [prodvor-network]
 
   minio:
@@ -48,9 +46,10 @@ services:
     environment:
       MINIO_ROOT_USER: localminio
       MINIO_ROOT_PASSWORD: localminio123456
+      MINIO_SERVER_CORS_ALLOW_ORIGIN: "*"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     volumes:
       - minio-data:/data
     networks: [prodvor-network]
@@ -63,14 +62,20 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 localminio localminio123456 &&
-      mc mb -p local/media || true &&
-      mc anonymous set download local/media || true &&
+      mc mb -p local/team-logos || true &&
+      mc anonymous set download local/team-logos || true &&
+      mc mb -p local/covers || true &&
+      mc anonymous set download local/covers || true &&
+      mc mb -p local/avatars || true &&
+      mc anonymous set download local/avatars || true &&
       tail -f /dev/null
       "
     networks: [prodvor-network]
 
 volumes:
   minio-data:
+  pgadmin-data:
+  postgres-data:
 
 networks:
   prodvor-network:
