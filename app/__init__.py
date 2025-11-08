@@ -26,16 +26,8 @@ def create_app(init_swagger=True):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
-
-    # --- Настройка времени жизни токенов ---
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = False # Токен обновления будет действовать до явного выхода
-
-    # Добавляем конфигурацию для S3, чтобы она была доступна в приложении
-    app.config['S3_ENDPOINT_URL'] = os.environ.get('S3_ENDPOINT_URL')
-    app.config['S3_ACCESS_KEY_ID'] = os.environ.get('S3_ACCESS_KEY_ID')
-    app.config['S3_SECRET_ACCESS_KEY'] = os.environ.get('S3_SECRET_ACCESS_KEY')
-    app.config['S3_BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 
     # --- Конфигурация Swagger ---
     app.config['SWAGGER'] = {
@@ -43,12 +35,15 @@ def create_app(init_swagger=True):
         'uiversion': 3,
         'specs_route': '/apidocs/',
         'swagger_ui_config': {
-            'urls': [
-                {
-                    'url': '/static/swagger.json',
-                    'name': 'API'
-                }
-            ]
+            'urls': [{'url': '/static/swagger.json', 'name': 'API'}]
+        },
+        'securityDefinitions': {
+            'bearerAuth': {
+                'type': 'apiKey',
+                'name': 'Authorization',
+                'in': 'header',
+                'description': "JWT-токен в формате 'Bearer <token>'"
+            }
         }
     }
     if init_swagger:
@@ -62,41 +57,39 @@ def create_app(init_swagger=True):
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    cors.init_app(app, resources={r"/api/v1/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
+    cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
     jwt.init_app(app)
 
     with app.app_context():
         # Импортируем модели, чтобы они были известны SQLAlchemy
         from . import models
 
-        # --- Регистрация ВСЕХ Blueprints ---
+        # --- Регистрация Blueprints ---
         from .routes.auth import auth_bp
         from .routes.users import users_bp
-        from .routes.teams import teams_bp
-        from .routes.sessions import sessions_bp
-        from .routes.legacy import legacy_bp
-        from .routes.general import general_bp
-        from .routes.sports import sports_bp
         from .routes.uploads import uploads_bp
+        from .routes.teams import teams_bp
+        from .routes.sports import sports_bp
         from .routes.playgrounds import playgrounds_bp
         from .routes.tournaments import tournaments_bp
         from .routes.posts import posts_bp
+        
+        # Старые/неиспользуемые, которые могут быть удалены в будущем
+        from .routes.sessions import sessions_bp
+        from .routes.legacy import legacy_bp
+        from .routes.general import general_bp
 
-        # Обратите внимание, что uploads_bp уже имеет префикс, поэтому его не нужно добавлять здесь
-        app.register_blueprint(uploads_bp)
-
-        # Для остальных префикс сохраняется
-        url_prefix = '/api/v1'
-        app.register_blueprint(auth_bp, url_prefix=url_prefix)
-        app.register_blueprint(users_bp, url_prefix=url_prefix)
-        app.register_blueprint(teams_bp, url_prefix=url_prefix)
-        app.register_blueprint(sessions_bp, url_prefix=url_prefix)
-        app.register_blueprint(legacy_bp, url_prefix=url_prefix)
-        app.register_blueprint(general_bp, url_prefix=url_prefix)
-        app.register_blueprint(sports_bp, url_prefix=url_prefix)
-        app.register_blueprint(playgrounds_bp, url_prefix=url_prefix)
-        app.register_blueprint(tournaments_bp, url_prefix=url_prefix)
-        app.register_blueprint(posts_bp, url_prefix=url_prefix)
-
+        # Регистрация с корректными префиксами
+        app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
+        app.register_blueprint(users_bp, url_prefix='/api/v1/users')
+        app.register_blueprint(uploads_bp, url_prefix='/api/v1/uploads')
+        app.register_blueprint(teams_bp, url_prefix='/api/v1/teams')
+        app.register_blueprint(sports_bp, url_prefix='/api/v1/sports')
+        app.register_blueprint(playgrounds_bp, url_prefix='/api/v1/playgrounds')
+        app.register_blueprint(tournaments_bp, url_prefix='/api/v1/tournaments')
+        app.register_blueprint(posts_bp, url_prefix='/api/v1/posts')
+        app.register_blueprint(sessions_bp, url_prefix='/api/v1/sessions')
+        app.register_blueprint(legacy_bp, url_prefix='/api/v1/legacy')
+        app.register_blueprint(general_bp, url_prefix='/api/v1/general')
 
     return app
