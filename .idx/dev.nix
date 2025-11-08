@@ -33,7 +33,7 @@
   services.docker.enable = true;
   services.postgres.enable = true;
   services.pgadmin4.enable = true;
-  services.minio. = true;
+  services.minio.enable = true;
 
   # IDX-интеграции
   idx = {
