@@ -197,9 +197,6 @@ services:
       "
     networks: [prodvor-network]
 
-networks:
-  prodvor-network:
-    driver: bridge
 
 volumes:
   minio-data:
