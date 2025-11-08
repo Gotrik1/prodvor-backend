@@ -27,6 +27,10 @@
     ALL_PROXY = "socks5://localhost:1080/";
   };
 
+  # Включаем сервисы
+  services.docker.enable = true;
+  services.postgres.enable = true;
+
   # IDX-интеграции
   idx = {
     extensions = [
