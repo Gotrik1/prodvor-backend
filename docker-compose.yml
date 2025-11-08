@@ -1,5 +1,4 @@
 services:
-  # ---------- DB ----------
 
   certbot:
     profiles: ["prod"]
