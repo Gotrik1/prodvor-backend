@@ -112,35 +112,7 @@ services:
         condition: service_started
     networks: [prodvor-network]
 
-  # ---------- Frontend DEV ----------
-  frontend-dev:
-    profiles: ["dev"]
-    build:
-      context: ./frontend
-      dockerfile: ../frontend.dev.Dockerfile
-    env_file:
-      - ./frontend/.env.production #не забыть сменить енв
-    container_name: frontend-dev
-    working_dir: /app
-    environment:
-      NEXT_TELEMETRY_DISABLED: "1"
-      OTEL_SDK_DISABLED: "1"
-      CHOKIDAR_USEPOLLING: "1"
-      WATCHPACK_POLLING: "1"
-      HOST: "0.0.0.0"
-      PORT: "3000"
-      NEXT_PUBLIC_API_BASE_URL: "http://backend:5000"
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      backend:
-        condition: service_started
-    networks: [prodvor-network]
-
-  # ---------- Nginx (для prod) ----------
+   # ---------- Nginx (для prod) ----------
   nginx:
     profiles: ["prod"]
     image: nginx:alpine
