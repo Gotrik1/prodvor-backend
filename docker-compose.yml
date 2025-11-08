@@ -21,7 +21,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - "E:/prodvor_data/postgres/18/docker:/var/lib/postgresql/18/docker"
+      - "/home/user/prodvor-backend/servises/postgres/18/docker:/var/lib/postgresql/18/docker"
       - ./postgres/conf/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./postgres/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     command:
