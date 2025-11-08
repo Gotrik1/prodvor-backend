@@ -41,8 +41,6 @@ services:
         target: /var/lib/pgadmin
     networks: [prodvor-network]
 
-
-
   # ---------- Local S3 Storage (MinIO) ----------
   minio:
     profiles: ["localstore"]
