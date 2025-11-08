@@ -64,7 +64,7 @@ services:
     volumes:
       - .servises/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - .servises/certbot/www:/var/www/certbot
-      - E:/prodvor_data/certbot/letsencrypt:/etc/letsencrypt
+      - /home/user/prodvor-backend/servises/certbot/letsencrypt:/etc/letsencrypt
     networks: [prodvor-network]
 
   # ---------- Local S3 Storage (MinIO) ----------
