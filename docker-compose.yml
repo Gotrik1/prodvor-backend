@@ -42,19 +42,7 @@ services:
     networks: [prodvor-network]
 
  # ---------- Nginx (для prod) ----------
-  nginx:
-    profiles: ["prod"]
-    image: nginx:alpine
-    container_name: nginx
-    depends_on: [frontend, backend, pgadmin]
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - .servises/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - .servises/certbot/www:/var/www/certbot
-      - /home/user/prodvor-backend/servises/certbot/letsencrypt:/etc/letsencrypt
-    networks: [prodvor-network]
+ 
 
   # ---------- Local S3 Storage (MinIO) ----------
   minio:
