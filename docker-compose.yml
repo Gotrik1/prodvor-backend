@@ -112,7 +112,7 @@ services:
         condition: service_started
     networks: [prodvor-network]
 
-   # ---------- Nginx (для prod) ----------
+  # ---------- Nginx (для prod) ----------
   nginx:
     profiles: ["prod"]
     image: nginx:alpine
