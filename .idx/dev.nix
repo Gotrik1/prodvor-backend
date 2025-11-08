@@ -7,16 +7,17 @@
   # Инструменты, которые должны переживать пересборки среды
   packages = [
     pkgs.python3
+     pkgs.git
     pkgs.bash
-    pkgs.lsof
-    pkgs.git
+    pkgs.openssh
     pkgs.docker_27
     pkgs.docker-compose
-    pkgs.openssh        # ssh, ssh-agent, ssh-add
-    pkgs.inotify-tools  # inotifywait
-    pkgs.entr           # альтернатива вотчеру
-    pkgs.postgresql-client # Добавляем psql для диагностики
-    pkgs.tailscale      # Устанавливаем Tailscale
+    pkgs.inotify-tools
+    pkgs.entr
+    pkgs.python3
+    pkgs.lsof
+    pkgs.postgresql      # ← тут psql
+    pkgs.tailscale     # Устанавливаем Tailscale
   ];
 
   # Глобальные переменные окружения
