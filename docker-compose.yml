@@ -90,7 +90,6 @@ services:
         condition: service_healthy
     networks: [prodvor-network]
 
-
   # ---------- Nginx (для prod) ----------
   nginx:
     profiles: ["prod"]
