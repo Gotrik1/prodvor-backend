@@ -10,21 +10,7 @@ services:
       - /home/user/prodvor_data/certbot/www:/var/www/certbot
       - /home/user/prodvor_data/certbot/letsencrypt:/etc/letsencrypt
     networks: [prodvor-network]
-# docker-compose.yml
-# Профили:
-#   - dev:        фронт с hot-reload, volume (frontend-dev)
-#   - prod:       собранный фронт (frontend), без volume, standalone
-#   - localstore: локальное S3-хранилище (MinIO) для DEV/теста (можно запускать хоть на прод-сервере)
-# Запуск:
-#   docker compose --profile dev  up -d frontend-dev backend postgres pgadmin
-#   docker compose --profile prod up -d frontend      backend postgres pgadmin nginx
-#   docker compose --profile dev  --profile localstore up -d frontend-dev backend postgres pgadmin minio minio-mc
-#   docker compose --profile prod --profile localstore up -d frontend backend postgres pgadmin nginx minio minio-mc
-# Остановить всё:
-#   docker compose down -v
 
-services:
-  # ---------- DB ----------
   postgres:
     image: postgres:18
     container_name: postgres
