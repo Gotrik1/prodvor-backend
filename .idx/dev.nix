@@ -17,6 +17,7 @@
     pkgs.lsof
     pkgs.postgresql
     pkgs.minio
+    pkgs.pgadmin4
     pkgs.tailscale     # Устанавливаем Tailscale
   ];
 
