@@ -10,6 +10,7 @@
     pkgs.bash
     pkgs.lsof
     pkgs.git
+    
     pkgs.openssh        # ssh, ssh-agent, ssh-add
     pkgs.inotify-tools  # inotifywait
     pkgs.entr           # альтернатива вотчеру
