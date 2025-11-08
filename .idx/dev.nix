@@ -16,7 +16,7 @@
     pkgs.python3
     pkgs.lsof
     pkgs.postgresql
-          # ← тут psql
+    pkgs.minio
     pkgs.tailscale     # Устанавливаем Tailscale
   ];
 
