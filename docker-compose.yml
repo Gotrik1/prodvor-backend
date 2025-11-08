@@ -48,7 +48,7 @@ services:
       - "5050:80"
     volumes:
       - type: bind
-        source: servises//pgadmin
+        source: servises/pgadmin
         target: /var/lib/pgadmin
     networks: [prodvor-network]
 
