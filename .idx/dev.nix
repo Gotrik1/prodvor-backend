@@ -6,7 +6,7 @@
 
   # Инструменты, которые должны переживать пересборки среды
   packages = [
-    pkgs.python3
+    
     pkgs.git
     pkgs.bash
     pkgs.openssh
