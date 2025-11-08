@@ -13,6 +13,8 @@
     pkgs.openssh        # ssh, ssh-agent, ssh-add
     pkgs.inotify-tools  # inotifywait
     pkgs.entr           # альтернатива вотчеру
+    pkgs.postgresql-client # Добавляем psql для диагностики
+    pkgs.tailscale      # Устанавливаем Tailscale
   ];
 
   # Глобальные переменные окружения
