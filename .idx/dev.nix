@@ -5,8 +5,7 @@
   channel = "stable-24.05";
 
   # Инструменты, которые должны переживать пересборки среды
-  packages = [
-    
+  packages = [    
     pkgs.git
     pkgs.bash
     pkgs.openssh
