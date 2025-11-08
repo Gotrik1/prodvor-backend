@@ -10,7 +10,8 @@
     pkgs.bash
     pkgs.lsof
     pkgs.git
-    pkgs.docker_28
+    pkgs.docker_27
+    pkgs.docker-compose
     pkgs.openssh        # ssh, ssh-agent, ssh-add
     pkgs.inotify-tools  # inotifywait
     pkgs.entr           # альтернатива вотчеру
