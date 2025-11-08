@@ -41,8 +41,7 @@ services:
         target: /var/lib/pgadmin
     networks: [prodvor-network]
 
- # ---------- Nginx (для prod) ----------
- 
+
 
   # ---------- Local S3 Storage (MinIO) ----------
   minio:
