@@ -4,31 +4,27 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from . import db
 
-# Helper function for default UUIDs
-def default_uuid():
-    return str(uuid.uuid4())
-
 # --- Связующие таблицы ---
 
 TeamMembers = db.Table('team_members',
-    db.Column('userId', db.String(36), db.ForeignKey('user.id'), primary_key=True),
-    db.Column('teamId', db.Integer, db.ForeignKey('team.id'), primary_key=True)
+    db.Column('userId', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True),
+    db.Column('teamId', UUID(as_uuid=True), db.ForeignKey('team.id'), primary_key=True)
 )
 
 TeamFollowers = db.Table('team_followers',
-    db.Column('userId', db.String(36), db.ForeignKey('user.id'), primary_key=True),
-    db.Column('teamId', db.Integer, db.ForeignKey('team.id'), primary_key=True)
+    db.Column('userId', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True),
+    db.Column('teamId', UUID(as_uuid=True), db.ForeignKey('team.id'), primary_key=True)
 )
 
 UserSports = db.Table('user_sports',
-    db.Column('userId', db.String(36), db.ForeignKey('user.id'), primary_key=True),
+    db.Column('userId', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True),
     db.Column('sportId', db.String, db.ForeignKey('sport.id'), primary_key=True)
 )
 
 # --- Основные модели ---
 
 class User(db.Model):
-    id = db.Column(db.String(36), primary_key=True, default=default_uuid)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = db.Column(db.String(120), unique=True, nullable=False)
     nickname = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -36,6 +32,7 @@ class User(db.Model):
     # Новые поля
     firstName = db.Column(db.String(100), nullable=True)
     lastName = db.Column(db.String(100), nullable=True)
+    birthDate = db.Column(db.DateTime, nullable=True)
     avatarUrl = db.Column(db.String(255), nullable=True)
     coverImageUrl = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(50), nullable=False)
@@ -61,6 +58,7 @@ class User(db.Model):
             "nickname": self.nickname,
             "firstName": self.firstName,
             "lastName": self.lastName,
+            "birthDate": self.birthDate.isoformat() if self.birthDate else None,
             "avatarUrl": self.avatarUrl,
             "coverImageUrl": self.coverImageUrl,
             "role": self.role,
@@ -85,10 +83,10 @@ class User(db.Model):
         return data
 
 class Team(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(120), nullable=False)
     logoUrl = db.Column(db.String(200))
-    captainId = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    captainId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
     sportId = db.Column(db.String, db.ForeignKey('sport.id')) # <- Заменили game
     rank = db.Column(db.Integer, default=1200)
     city = db.Column(db.String(100))
@@ -98,8 +96,8 @@ class Team(db.Model):
     currentStreakType = db.Column(db.String(1))
     currentStreakCount = db.Column(db.Integer)
     form = db.Column(db.String(5))
-    mvpPlayerId = db.Column(db.String(36), db.ForeignKey('user.id'))
-    topScorerPlayerId = db.Column(db.String(36), db.ForeignKey('user.id'))
+    mvpPlayerId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'))
+    topScorerPlayerId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'))
     cleanSheets = db.Column(db.Integer, default=0)
     avgRating = db.Column(db.Integer, default=0)
     createdAt = db.Column(db.DateTime(timezone=True), server_default=func.now())
@@ -137,8 +135,8 @@ class Team(db.Model):
         return data
 
 class PlayerProfile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    userId = db.Column(db.String(36), db.ForeignKey('user.id'), unique=True, nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), unique=True, nullable=False)
     matchesPlayed = db.Column(db.Integer, default=0)
     wins = db.Column(db.Integer, default=0)
     elo = db.Column(db.Integer, default=1200) # <- Перенесли elo
@@ -151,8 +149,8 @@ class PlayerProfile(db.Model):
         }
 
 class RefereeProfile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    userId = db.Column(db.String(36), db.ForeignKey('user.id'), unique=True, nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), unique=True, nullable=False)
     category = db.Column(db.String(50))
     matchesJudged = db.Column(db.Integer, default=0)
 
@@ -164,8 +162,8 @@ class RefereeProfile(db.Model):
 
 
 class CoachProfile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    userId = db.Column(db.String(36), db.ForeignKey('user.id'), unique=True, nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), unique=True, nullable=False)
     specialization = db.Column(db.String(150))
     experienceYears = db.Column(db.Integer)
 
@@ -176,7 +174,7 @@ class CoachProfile(db.Model):
         }
 
 class Tournament(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(150), nullable=False)
     game = db.Column(db.String(100))
     status = db.Column(db.String(50))
@@ -198,9 +196,9 @@ class Tournament(db.Model):
         }
 
 class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    authorId = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
-    teamId = db.Column(db.Integer, db.ForeignKey('team.id'))
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    authorId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
+    teamId = db.Column(UUID(as_uuid=True), db.ForeignKey('team.id'))
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime(timezone=True), server_default=func.now())
     
@@ -217,9 +215,9 @@ class Post(db.Model):
         }
 
 class Comment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    postId = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    authorId = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    postId = db.Column(UUID(as_uuid=True), db.ForeignKey('post.id'), nullable=False)
+    authorId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
@@ -233,7 +231,7 @@ class Comment(db.Model):
         }
 
 class Playground(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(150))
     address = db.Column(db.String(250))
     type = db.Column(db.String(100))
@@ -249,34 +247,34 @@ class Playground(db.Model):
         }
 
 class Quest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(150))
     description = db.Column(db.Text)
     type = db.Column(db.String(50))
     xp_reward = db.Column(db.Integer)
 
 class Achievement(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(150))
     description = db.Column(db.Text)
     icon = db.Column(db.String(50))
 
 class Sponsor(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(150))
     logoUrl = db.Column(db.String(200))
     contribution = db.Column(db.String(200))
 
 class TeamApplication(db.Model):
     __tablename__ = 'team_applications'
-    userId = db.Column(db.String(36), db.ForeignKey('user.id'), primary_key=True)
-    teamId = db.Column(db.Integer, db.ForeignKey('team.id'), primary_key=True)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True)
+    teamId = db.Column(UUID(as_uuid=True), db.ForeignKey('team.id'), primary_key=True)
     status = db.Column(db.String(20), default='pending')
     createdAt = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
 class TeamSeasonStats(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    teamId = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    teamId = db.Column(UUID(as_uuid=True), db.ForeignKey('team.id'), nullable=False)
     season = db.Column(db.Integer, nullable=False)
     leagueRank = db.Column(db.String(50))
     finalElo = db.Column(db.Integer)
@@ -285,8 +283,8 @@ class TeamSeasonStats(db.Model):
 
 class UserSession(db.Model):
     __tablename__ = 'user_sessions'
-    id = db.Column(db.Integer, primary_key=True)
-    userId = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
     refreshToken = db.Column(db.String(512), nullable=False, index=True)
     userAgent = db.Column(db.String(255))
     ipAddress = db.Column(db.String(45))
@@ -307,8 +305,8 @@ class Sport(db.Model):
 
 class Upload(db.Model):
     __tablename__ = 'uploads'
-    id = db.Column(db.String(36), primary_key=True, default=default_uuid)
-    user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
     path = db.Column(db.String(512), nullable=False)
     file_hash = db.Column(db.String(64), nullable=True) 
     content_type = db.Column(db.String(100), nullable=False)

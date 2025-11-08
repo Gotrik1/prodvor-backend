@@ -54,7 +54,7 @@ def register():
 
     hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     
-    new_user = User(email=data['email'], password=hashed_password, nickname=data['nickname'], role=data['role'], city=data.get('city'))
+    new_user = User(email=data['email'], password_hash=hashed_password, nickname=data['nickname'], role=data['role'], city=data.get('city'))
 
     db.session.add(new_user)
     db.session.flush()
@@ -103,7 +103,7 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(email=data.get('email')).first()
 
-    if user and bcrypt.check_password_hash(user.password, data.get('password')):
+    if user and bcrypt.check_password_hash(user.password_hash, data.get('password')):
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
         

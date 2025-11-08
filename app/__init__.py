@@ -1,7 +1,7 @@
 
 import os
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -54,11 +54,15 @@ def create_app(init_swagger=True):
     if init_swagger:
         Swagger(app)
 
+    @app.route('/')
+    def index():
+        return redirect('/apidocs/')
+
     # --- Инициализация расширений в приложении ---
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    cors.init_app(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    cors.init_app(app, resources={r"/api/v1/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     jwt.init_app(app)
 
     with app.app_context():

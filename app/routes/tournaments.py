@@ -10,33 +10,14 @@ tournaments_bp = Blueprint('tournaments', __name__)
 def get_tournaments():
     """
     Get all tournaments
-    ---
-    tags:
-        - Tournaments
-    responses:
-        '200':
-            description: A list of tournaments.
     """
     tournaments = Tournament.query.all()
     return jsonify([t.to_dict() for t in tournaments])
 
-@tournaments_bp.route('/tournaments/<int:tournament_id>', methods=['GET'])
+@tournaments_bp.route('/tournaments/<tournament_id>', methods=['GET'])
 def get_tournament(tournament_id):
     """
     Get a tournament by ID
-    ---
-    tags:
-        - Tournaments
-    parameters:
-        -   name: tournament_id
-            in: path
-            required: true
-            type: integer
-    responses:
-        '200':
-            description: A single tournament.
-        '404':
-            description: Tournament not found.
     """
     tournament = Tournament.query.get_or_404(tournament_id)
     return jsonify(tournament.to_dict())
@@ -46,36 +27,6 @@ def get_tournament(tournament_id):
 def create_tournament():
     """
     Create a new tournament
-    ---
-    tags:
-        - Tournaments
-    security:
-        - bearerAuth: []
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required: [name]
-            properties:
-              name:
-                type: string
-              game:
-                type: string
-              status:
-                type: string
-              prizePool:
-                type: string
-              maxParticipants:
-                type: integer
-              startDate:
-                type: string
-    responses:
-        '201':
-            description: Tournament created successfully.
-        '400':
-            description: Missing required fields.
     """
     data = request.get_json()
     if not data or not data.get('name'):

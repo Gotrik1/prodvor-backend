@@ -41,7 +41,7 @@ def create_post():
               content:
                 type: string
               teamId:
-                type: integer
+                type: string
     responses:
         '201':
             description: Post created successfully.

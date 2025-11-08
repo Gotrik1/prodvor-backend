@@ -44,7 +44,7 @@ def get_me():
     include_teams = request.args.get('include_teams', 'false').lower() == 'true'
     return jsonify(user.to_dict(include_teams=include_teams, include_sports=True))
 
-@users_bp.route('/users/<int:user_id>', methods=['GET'])
+@users_bp.route('/users/<string:user_id>', methods=['GET'])
 def get_user(user_id):
     """
     Get a user by ID
@@ -55,7 +55,7 @@ def get_user(user_id):
         -   name: user_id
             in: path
             required: true
-            type: integer
+            type: string
     responses:
         '200':
             description: A single user's profile.
@@ -66,7 +66,7 @@ def get_user(user_id):
     include_teams = request.args.get('include_teams', 'false').lower() == 'true'
     return jsonify(user.to_dict(include_teams=include_teams, include_sports=True))
 
-@users_bp.route('/users/<int:user_id>', methods=['PUT'])
+@users_bp.route('/users/<string:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
     """
@@ -80,7 +80,7 @@ def update_user(user_id):
         -   name: user_id
             in: path
             required: true
-            type: integer
+            type: string
     requestBody:
       required: true
       content:
@@ -108,18 +108,32 @@ def update_user(user_id):
     user_to_update = User.query.get_or_404(user_id)
     current_user = User.query.get(current_user_id)
 
-    if user_to_update.id != current_user_id and (not current_user or current_user.role != 'admin'):
+    if str(user_to_update.id) != current_user_id and (not current_user or current_user.role != 'admin'):
         return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
+    # Prevent users from changing their own role, but allow admins to do so
+    if 'role' in data and (str(user_to_update.id) != current_user_id or (current_user and current_user.role != 'admin')):
+        return jsonify({"error": "You cannot change your own role."}), 403
+    
+    if 'role' in data and current_user and current_user.role == 'admin':
+        user_to_update.role = data.get('role', user_to_update.role)
+
     user_to_update.nickname = data.get('nickname', user_to_update.nickname)
     user_to_update.city = data.get('city', user_to_update.city)
+    user_to_update.firstName = data.get('firstName', user_to_update.firstName)
+    user_to_update.lastName = data.get('lastName', user_to_update.lastName)
+    user_to_update.gender = data.get('gender', user_to_update.gender)
+    user_to_update.bio = data.get('bio', user_to_update.bio)
+    user_to_update.birthDate = data.get('birthDate', user_to_update.birthDate)
+
 
     if 'sports' in data and isinstance(data['sports'], list):
         user_to_update.sports.clear()
+        # Assuming sports are sent as a list of sport IDs (which are now UUIDs)
         sports_to_add = Sport.query.filter(Sport.id.in_(data['sports'])).all()
         for sport in sports_to_add:
             user_to_update.sports.append(sport)
@@ -168,3 +182,4 @@ def update_avatar():
     db.session.commit()
 
     return jsonify({"message": "Аватар успешно обновлен", "user": user.to_dict()})
+
