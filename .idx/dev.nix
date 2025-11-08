@@ -33,6 +33,7 @@
   services.docker.enable = true;
   services.postgres.enable = true;
   services.postgres.enable = true;
+  services.postgres.enable = true;
 
   # IDX-интеграции
   idx = {
