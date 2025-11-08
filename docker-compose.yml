@@ -7,7 +7,7 @@ services:
     entrypoint: ""
     command: sh
     volumes:
-      - /home/user/prodvor_data/certbot/www:/var/www/certbot
+      - /home/user/prodvor-backend/servises/certbot/www:/var/www/certbot
       - /home/user/prodvor_data/certbot/letsencrypt:/etc/letsencrypt
     networks: [prodvor-network]
 
