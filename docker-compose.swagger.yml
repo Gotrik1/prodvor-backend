@@ -1,0 +1,12 @@
+services:
+  # ... ваш сервис backend
+  
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      URL: http://backend:5000/openapi.yaml
+    depends_on:
+      - backend

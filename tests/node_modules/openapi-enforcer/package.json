@@ -1,0 +1,58 @@
+{
+  "name": "openapi-enforcer",
+  "version": "1.23.0",
+  "description": "Library for validating, parsing, and formatting data against open api schemas.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha --recursive test",
+    "coverage": "nyc --reporter=html npm test",
+    "coverage:report": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "coverage:watch": "chokidar 'test/**/*' 'bin/**/*' -c 'npm run coverage'",
+    "docs:build": "markdown-docs build docs-src docs",
+    "docs:dev": "markdown-docs dev docs-src",
+    "prepublishOnly": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byu-oit/openapi-enforcer.git"
+  },
+  "types": "openapi-enforcer.d.ts",
+  "keywords": [
+    "openapi",
+    "swagger",
+    "validate",
+    "response",
+    "build",
+    "compose",
+    "parse",
+    "format",
+    "deserialize",
+    "serialize",
+    "request validation",
+    "request parsing",
+    "response validation",
+    "response serializing",
+    "utility",
+    "utils",
+    "plugable"
+  ],
+  "author": "James Speirs",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/byu-oit/openapi-enforcer/issues"
+  },
+  "homepage": "https://openapi-enforcer.com",
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "coveralls": "^3.1.1",
+    "mocha": "^9.1.3",
+    "nyc": "^15.1.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "randexp": "^0.5.3"
+  }
+}
