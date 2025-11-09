@@ -1,12 +1,13 @@
 
-from flask import request, jsonify, Blueprint, abort
+from apiflask import APIBlueprint
+from flask import request, jsonify, abort
 from app import db
 from app.models import Post
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import jwt_required
 from app.routes.users import serialize_pagination
 
-posts_bp = Blueprint('posts', __name__)
+posts_bp = APIBlueprint('posts', __name__)
 
 @posts_bp.route('/posts', methods=['GET'])
 def get_posts():

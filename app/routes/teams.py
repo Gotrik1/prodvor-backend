@@ -1,12 +1,13 @@
 
-from flask import request, jsonify, Blueprint, abort
+from apiflask import APIBlueprint
+from flask import request, jsonify, abort
 from app import db
 from app.models import Team, User, Sport, TeamApplication
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.routes.users import serialize_pagination
 import uuid
 
-teams_bp = Blueprint('teams', __name__, url_prefix='/api/v1/teams')
+teams_bp = APIBlueprint('teams', __name__, url_prefix='/api/v1/teams')
 
 @teams_bp.route('/', methods=['GET'])
 def get_teams():

@@ -1,9 +1,10 @@
 
-from flask import Blueprint, jsonify, request
+from apiflask import APIBlueprint
+from flask import jsonify, request
 from app.models import Sponsor
 from app.routes.users import serialize_pagination
 
-sponsors_bp = Blueprint('sponsors', __name__)
+sponsors_bp = APIBlueprint('sponsors', __name__)
 
 @sponsors_bp.route('/sponsors', methods=['GET'])
 def get_sponsors():

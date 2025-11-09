@@ -1,11 +1,12 @@
 
-from flask import Blueprint, jsonify, request, abort
+from apiflask import APIBlueprint
+from flask import jsonify, request, abort
 from app import db
 from app.models import Sport
 from app.routes.users import serialize_pagination
 import uuid
 
-sports_bp = Blueprint('sports', __name__)
+sports_bp = APIBlueprint('sports', __name__)
 
 @sports_bp.route('/sports/', methods=['GET'])
 def get_sports():

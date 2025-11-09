@@ -1,10 +1,11 @@
 
-from flask import request, jsonify, Blueprint
+from apiflask import APIBlueprint
+from flask import request, jsonify
 from app import db
 from app.models import Tournament
 from flask_jwt_extended import jwt_required
 
-tournaments_bp = Blueprint('tournaments', __name__)
+tournaments_bp = APIBlueprint('tournaments', __name__)
 
 @tournaments_bp.route('/tournaments', methods=['GET'])
 def get_tournaments():

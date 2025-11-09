@@ -1,11 +1,12 @@
 
-from flask import request, jsonify, Blueprint, abort
+from apiflask import APIBlueprint
+from flask import request, jsonify, abort
 from app import db
 from app.models import Playground
 from flask_jwt_extended import jwt_required
 from app.routes.users import serialize_pagination # Импортируем утилиту пагинации
 
-playgrounds_bp = Blueprint('playgrounds', __name__)
+playgrounds_bp = APIBlueprint('playgrounds', __name__)
 
 @playgrounds_bp.route('/playgrounds', methods=['GET'])
 def get_playgrounds():

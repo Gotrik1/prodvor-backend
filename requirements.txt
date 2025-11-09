@@ -10,6 +10,9 @@ alembic
 # Database
 psycopg2-binary
 
+# S3 Storage
+minio
+
 # Utilities
 python-dotenv
 marshmallow

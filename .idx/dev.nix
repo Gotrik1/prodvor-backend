@@ -44,6 +44,13 @@
             "-c" 
             # Используем '' для многострочного скрипта в Nix
             ''
+              # 0. Ждем, пока Docker-демон запустится.
+              echo "Waiting for Docker daemon to start..."
+              while ! docker info > /dev/null 2>&1; do
+                sleep 1
+              done
+              echo "Docker daemon started."
+
               # 1. Запускаем все сервисы из docker-compose.yml в фоновом режиме.
               #    Флаг --wait дожидается, пока healthcheck для postgres не пройдет.
               docker-compose up -d --wait
@@ -52,8 +59,9 @@
               #    Используем учетные данные из docker-compose.yml (prodvor:prodvor@localhost:5432/prodvor)
               export DATABASE_URL='postgresql://prodvor:prodvor@localhost:5432/prodvor'
 
-              # 3. Активируем venv и запускаем Flask.
+              # 3. Активируем venv, указываем приложение и запускаем Flask.
               source .venv/bin/activate
+              export FLASK_APP=main.py
               echo 'Запускаем Flask-сервер...'
               exec flask run --host=0.0.0.0 --port=8080
             ''

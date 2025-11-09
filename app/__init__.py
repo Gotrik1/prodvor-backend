@@ -20,7 +20,6 @@ cors = CORS()
 jwt = JWTManager()
 s3_service = S3Service()
 
-
 def create_app():
     """Фабрика для создания экземпляра Flask приложения."""
 
@@ -34,7 +33,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
     
     # --- S3 Конфигурация ---
@@ -84,16 +83,16 @@ def create_app():
         from .routes.sponsors import sponsors_bp
         from .routes.lfg import lfg_bp
         
-        # Регистрация с префиксами
+        # Регистрация Blueprints
         app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
-        app.register_blueprint(users_bp, url_prefix='/api/v1/users')
-        app.register_blueprint(uploads_bp, url_prefix='/api/v1/uploads')
-        app.register_blueprint(teams_bp, url_prefix='/api/v1/teams')
+        app.register_blueprint(users_bp)
+        app.register_blueprint(uploads_bp)
+        app.register_blueprint(teams_bp)
         app.register_blueprint(sports_bp, url_prefix='/api/v1/sports')
         app.register_blueprint(playgrounds_bp, url_prefix='/api/v1/playgrounds')
-        app.register_blueprint(tournaments_bp, url_prefix='/api/v1/tournaments')
+        app.register_blueprint(tournaments_bp)
         app.register_blueprint(posts_bp, url_prefix='/api/v1/posts')
-        app.register_blueprint(sponsors_bp, url_prefix='/api/v1/sponsors')
+        app.register_blueprint(sponsors_bp)
         app.register_blueprint(lfg_bp, url_prefix='/api/v1')
 
     return app

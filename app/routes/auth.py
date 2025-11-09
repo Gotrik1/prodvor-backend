@@ -1,11 +1,12 @@
 
-from flask import request, jsonify, Blueprint, abort
+from apiflask import APIBlueprint
+from flask import request, jsonify, abort
 from app import db, bcrypt
 from app.models import User, PlayerProfile, RefereeProfile, CoachProfile, UserSession
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 import uuid
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = APIBlueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():

@@ -1,10 +1,11 @@
 
-from flask import request, jsonify, Blueprint, abort
+from apiflask import APIBlueprint
+from flask import request, jsonify, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import s3_service
 import uuid
 
-uploads_bp = Blueprint('uploads', __name__, url_prefix='/api/v1/uploads')
+uploads_bp = APIBlueprint('uploads', __name__, url_prefix='/api/v1/uploads')
 
 @uploads_bp.route('/request-url', methods=['POST'])
 @jwt_required()

@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
+from apiflask import APIBlueprint
+from flask import request, jsonify
 from app.models import LfgPost, db, User, Team, Sport
 from app.utils.decorators import jwt_required
 
-lfg_bp = Blueprint('lfg_bp', __name__)
+lfg_bp = APIBlueprint('lfg_bp', __name__)
 
 @lfg_bp.route('/lfg', methods=['GET'])
 def get_lfg_posts():

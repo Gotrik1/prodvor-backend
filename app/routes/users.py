@@ -1,21 +1,21 @@
 
-from flask import Blueprint, jsonify, request, abort
+from apiflask import APIBlueprint
+from flask import jsonify, request, abort
 from uuid import UUID
-from ..models import db, User, FriendRequest, Team, UserSettings, UserPrivacySettings
+from ..models import db, User, FriendRequest, Team, UserSettings, UserPrivacySettings, TeamFollowers
 from ..utils.decorators import jwt_required
 
-users_bp = Blueprint('users', __name__, url_prefix='/api/v1/users')
+users_bp = APIBlueprint('users', __name__, url_prefix='/api/v1/users')
 
-def serialize_pagination(pagination, data_key, serializer):
+def serialize_pagination(pagination, serializer):
+    """Helper function to serialize paginated data according to the spec."""
     return {
-        data_key: [serializer(item) for item in pagination.items],
-        "pagination": {
+        "data": [serializer(item) for item in pagination.items],
+        "meta": {
             "page": pagination.page,
             "per_page": pagination.per_page,
             "total": pagination.total,
             "pages": pagination.pages,
-            "has_next": pagination.has_next,
-            "has_prev": pagination.has_prev
         }
     }
 
@@ -43,31 +43,7 @@ def get_profile_buttons(current_user_id, profile_owner):
 @users_bp.route('/<string:user_id>', methods=['GET'])
 @jwt_required
 def get_user(current_user, user_id):
-    """
-    Get user profile by ID
-    ---
-    tags:
-      - User Profile
-    summary: Get a user's profile by their ID
-    description: Retrieves public profile information for a specific user, along with context-aware action buttons (e.g., 'Add Friend').
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: user_id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: The UUID of the user to retrieve.
-    responses:
-      200:
-        description: User profile data retrieved successfully.
-      404:
-        description: User not found.
-      400:
-        description: Invalid UUID format.
-    """
+    """Get user profile by ID. Returns a full user object, including player_profile if available."""
     try:
         user_uuid = UUID(user_id, version=4)
     except ValueError:
@@ -80,21 +56,66 @@ def get_user(current_user, user_id):
 @users_bp.route('/me', methods=['GET'])
 @jwt_required
 def get_me(current_user):
-    """
-    Get current user's profile
-    ---
-    tags:
-      - User Profile
-    summary: Get current user's profile
-    description: Retrieves the complete profile information for the currently authenticated user, including teams and settings.
-    security:
-      - bearerAuth: []
-    responses:
-      200:
-        description: User profile data successfully retrieved.
-      401:
-        description: Unauthorized. JWT is missing or invalid.
-    """
+    """Get current user's profile."""
     user = User.query.get_or_404(current_user.id)
     profile_buttons = get_profile_buttons(current_user.id, user)
     return jsonify(user.to_dict(include_teams=True, profile_buttons=profile_buttons, include_settings=True))
+
+@users_bp.route('/<string:user_id>/friends', methods=['GET'])
+@jwt_required
+def get_user_friends(current_user, user_id):
+    """Get a paginated list of a user's friends."""
+    try:
+        user_uuid = UUID(user_id, version=4)
+    except ValueError:
+        abort(400, description="Invalid UUID format")
+
+    user = User.query.get_or_404(user_uuid)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    friends_pagination = user.friends.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify(serialize_pagination(friends_pagination, lambda u: u.to_dict()))
+
+@users_bp.route('/<string:user_id>/followers', methods=['GET'])
+@jwt_required
+def get_user_followers(current_user, user_id):
+    """Get a paginated list of a user's followers."""
+    try:
+        user_uuid = UUID(user_id, version=4)
+    except ValueError:
+        abort(400, description="Invalid UUID format")
+
+    user = User.query.get_or_404(user_uuid)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    followers_pagination = user.followers.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify(serialize_pagination(followers_pagination, lambda u: u.to_dict()))
+
+@users_bp.route('/<string:user_id>/following', methods=['GET'])
+@jwt_required
+def get_user_following(current_user, user_id):
+    """Get paginated lists of users and teams a user is following."""
+    try:
+        user_uuid = UUID(user_id, version=4)
+    except ValueError:
+        abort(400, description="Invalid UUID format")
+
+    user = User.query.get_or_404(user_uuid)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    # Paginate user's followed users
+    users_following_pagination = user.followingUsers.paginate(page=page, per_page=per_page, error_out=False)
+
+    # Paginate user's followed teams
+    teams_following_query = Team.query.join(TeamFollowers).filter(TeamFollowers.c.userId == user.id)
+    teams_following_pagination = teams_following_query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "users": serialize_pagination(users_following_pagination, lambda u: u.to_dict()),
+        "teams": serialize_pagination(teams_following_pagination, lambda t: t.to_dict())
+    })
