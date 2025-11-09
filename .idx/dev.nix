@@ -15,7 +15,8 @@
     pkgs.entr
     pkgs.python3
     pkgs.lsof
-    pkgs.postgresql # Оставляем клиент psql для удобства
+    pkgs.postgresql
+     # Оставляем клиент psql для удобства
     
   ];
 

@@ -83,7 +83,7 @@ paths:
               properties:
                 refreshToken:
                   type: string
-                  example: def50200...
+                  example: 'def50200a5d7a5b3d693a0b768a9946893c8309d73c88b20a324b17f4625f38e'
               required:
                 - refreshToken
       responses:
@@ -184,15 +184,15 @@ paths:
                 summary: Player looking for a team
                 value:
                   type: player
-                  sportId: sport-1
+                  sportId: 'sport-1'
                   requiredRole: Forward
                   message: Experienced forward looking for a competitive team for the new season.
               team_lfg:
                 summary: Team looking for a player
                 value:
                   type: team
-                  sportId: sport-2
-                  teamId: 123e4567-e89b-12d3-a456-426614174000
+                  sportId: 'sport-2'
+                  teamId: '123e4567-e89b-12d3-a456-426614174000'
                   requiredRole: Goalkeeper
                   message: Our team needs a reliable goalkeeper for weekend leagues.
       responses:
@@ -313,7 +313,7 @@ paths:
               new_post:
                 value:
                   content: Just had a great match! Looking forward to the next one.
-                  teamId: 123e4567-e89b-12d3-a456-426614174000
+                  teamId: '123e4567-e89b-12d3-a456-426614174000'
       responses:
         '201':
           description: Post created successfully.
@@ -510,10 +510,10 @@ components:
       properties:
         accessToken:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
         refreshToken:
           type: string
-          example: def50200a5d7a5b3d693a0b768a9946893c8309d73c88b20a324b17f4625f38e
+          example: 'def50200a5d7a5b3d693a0b768a9946893c8309d73c88b20a324b17f4625f38e'
       required:
         - accessToken
         - refreshToken
@@ -523,11 +523,11 @@ components:
         id:
           type: string
           format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+          example: 'd290f1ee-6c54-4b01-90e6-d701748f0851'
         authorId:
           type: string
           format: uuid
-          example: 989d3e6f-3290-481b-a4a8-690a61555543
+          example: '989d3e6f-3290-481b-a4a8-690a61555543'
         content:
           type: string
           example: This is a new post!
@@ -535,7 +535,7 @@ components:
           type: string
           format: uuid
           nullable: true
-          example: 123e4567-e89b-12d3-a456-426614174000
+          example: '123e4567-e89b-12d3-a456-426614174000'
         createdAt:
           type: string
           format: date-time
@@ -551,7 +551,7 @@ components:
         id:
           type: string
           format: uuid
-          example: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
         name:
           type: string
           example: Central Park Field
@@ -568,33 +568,35 @@ components:
         - id
         - name
         - address
+      additionalProperties: false
     Sponsor:
       type: object
       properties:
         id:
           type: string
           format: uuid
-          example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+          example: 'b2c3d4e5-f6a7-8901-2345-67890abcdef1'
         name:
           type: string
           example: "Sport-Drinks Inc."
         logoUrl:
           type: string
           format: uri
-          example: https://example.com/logo.png
+          example: 'https://example.com/logo.png'
         websiteUrl:
           type: string
           format: uri
-          example: https://sport-drinks.com
+          example: 'https://sport-drinks.com'
       required:
         - id
         - name
+      additionalProperties: false
     Sport:
       type: object
       properties:
         id:
           type: string
-          example: sport-1
+          example: 'sport-1'
         name:
           type: string
           example: Football
@@ -605,6 +607,7 @@ components:
         - id
         - name
         - isTeamSport
+      additionalProperties: false
     LfgPost:
       type: object
       properties:
@@ -616,7 +619,7 @@ components:
           enum: [player, team]
         sportId:
           type: string
-          example: sport-1
+          example: 'sport-1'
         teamId:
           type: string
           format: uuid
@@ -639,13 +642,14 @@ components:
         - message
         - authorId
         - createdAt
+      additionalProperties: false
     UserProfile:
       type: object
       properties:
         id:
           type: string
           format: uuid
-          example: 989d3e6f-3290-481b-a4a8-690a61555543
+          example: '989d3e6f-3290-481b-a4a8-690a61555543'
         email:
           type: string
           format: email
@@ -725,7 +729,7 @@ components:
               enum: [player]
             sportId:
               type: string
-              example: sport-1
+              example: 'sport-1'
             requiredRole:
               type: string
             message:
@@ -744,7 +748,7 @@ components:
               enum: [team]
             sportId:
               type: string
-              example: sport-2
+              example: 'sport-2'
             teamId:
               type: string
               format: uuid
@@ -759,7 +763,6 @@ components:
             - requiredRole
             - message
           additionalProperties: false
-      additionalProperties: false
     PostCreate:
       type: object
       properties:
@@ -771,7 +774,7 @@ components:
           format: uuid
           nullable: true
           description: The ID of the team to associate the post with (optional).
-          example: 123e4567-e89b-12d3-a456-426614174000
+          example: '123e4567-e89b-12d3-a456-426614174000'
       required:
         - content
       additionalProperties: false
@@ -807,6 +810,7 @@ components:
         - per_page
         - total
         - pages
+      additionalProperties: false
     Error:
       type: object
       description: RFC7807-compliant error response.
@@ -815,7 +819,7 @@ components:
           type: string
           format: uri
           description: A URI reference that identifies the problem type.
-          example: about:blank
+          example: "about:blank"
         title:
           type: string
           description: A short, human-readable summary of the problem type.
@@ -836,6 +840,14 @@ components:
       required:
         - title
         - status
+      additionalProperties: false
 x-changelog:
-  - 'feat: Added `operationId` to all API operations for client generation.'
-  - 'feat: Implemented conditional validation for `LfgCreate` using `oneOf` (teamId
+  - "feat: Added `operationId` to all API operations for client generation."
+  - "feat: Implemented conditional validation for `LfgCreate` using `oneOf` (teamId is required when type is ''team'')."
+  - "feat: Created a reusable `TokenPair` schema and applied it to login and refresh endpoints."
+  - "feat: Standardized common error responses (401, 403, 404) using shared components under `components/responses`."
+  - "feat: Added `additionalProperties: false` to most schemas for stricter validation."
+  - "fix: Standardized all ID fields to use `type: string` and wrapped examples in quotes for YAML safety."
+  - "fix: Updated `UserProfile` schema with required fields and placeholder `teams` and `settings` properties."
+  - "refactor: Changed `/auth/logout` to be a stateless endpoint returning `204 No Content`."
+  - "chore: Left non-standard paths like `/posts/posts` as-is, with a plan to normalize them in a future major version."
