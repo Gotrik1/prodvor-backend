@@ -1,14 +1,14 @@
 
 import os
 from datetime import timedelta
-from flask import Flask, redirect
+from apiflask import APIFlask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-from flasgger import Swagger
+
 from .s3_service import S3Service
 
 load_dotenv()
@@ -20,9 +20,15 @@ cors = CORS()
 jwt = JWTManager()
 s3_service = S3Service()
 
-def create_app(init_swagger=True):
+
+def create_app():
     """Фабрика для создания экземпляра Flask приложения."""
-    app = Flask(__name__)
+
+    app = APIFlask(
+        __name__,
+        title="Prodvor API",
+        version="1.0"
+    )
 
     # --- Конфигурация ---
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -38,29 +44,21 @@ def create_app(init_swagger=True):
     app.config['S3_BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
     app.config['S3_SECURE'] = os.environ.get('S3_SECURE', 'False').lower() in ['true', '1']
 
-    # --- Конфигурация Swagger ---
-    if init_swagger:
-        swagger_config = {
-            "headers": [],
-            "specs": [
-                {
-                    "endpoint": 'apispec_1',
-                    "route": '/apispec_1.json',
-                    "rule_filter": lambda rule: True,  # all in
-                    "model_filter": lambda tag: True,  # all in
-                }
-            ],
-            "static_url_path": "/flasgger_static",
-            "swagger_ui": True,
-            "specs_route": "/apidocs/"
+    # --- OpenAPI (Swagger) Конфигурация ---
+    app.config['SERVERS'] = [
+        {'name': 'Development', 'url': 'http://localhost:5000'},
+        {'name': 'Production', 'url': 'https://prodvor.ru'}
+    ]
+    app.security_schemes = {
+        'bearerAuth': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'Аутентификационный токен JWT.'
         }
-        swagger = Swagger(app, config=swagger_config)
+    }
 
-    @app.route('/')
-    def index():
-        return redirect('/apidocs/')
-
-    # --- Инициализация расширений и обработчиков ошибок ---
+    # --- Инициализация расширений ---
     from . import errors
     db.init_app(app)
     migrate.init_app(app, db)
@@ -68,7 +66,7 @@ def create_app(init_swagger=True):
     cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
     jwt.init_app(app)
     s3_service.init_app(app)
-    errors.init_app(app) # Регистрация обработчика ошибок
+    errors.init_app(app)
 
     with app.app_context():
         # Импортируем модели
@@ -99,3 +97,6 @@ def create_app(init_swagger=True):
         app.register_blueprint(lfg_bp, url_prefix='/api/v1')
 
     return app
+
+# Создаем экземпляр для простоты запуска (flask run)
+app = create_app()
