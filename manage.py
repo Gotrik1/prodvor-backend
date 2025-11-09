@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv() # Загружает переменные окружения из .env файла
+
 import json
 import click
 import os

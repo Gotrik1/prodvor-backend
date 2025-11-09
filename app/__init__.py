@@ -9,6 +9,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from flasgger import Swagger
+from .s3_service import S3Service
 
 load_dotenv()
 
@@ -17,6 +18,7 @@ migrate = Migrate()
 bcrypt = Bcrypt()
 cors = CORS()
 jwt = JWTManager()
+s3_service = S3Service()
 
 def create_app(init_swagger=True):
     """Фабрика для создания экземпляра Flask приложения."""
@@ -28,6 +30,13 @@ def create_app(init_swagger=True):
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    
+    # --- S3 Конфигурация ---
+    app.config['S3_ENDPOINT'] = os.environ.get('S3_ENDPOINT')
+    app.config['S3_ACCESS_KEY'] = os.environ.get('S3_ACCESS_KEY')
+    app.config['S3_SECRET_KEY'] = os.environ.get('S3_SECRET_KEY')
+    app.config['S3_BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
+    app.config['S3_SECURE'] = os.environ.get('S3_SECURE', 'False').lower() in ['true', '1']
 
     # --- Конфигурация Swagger ---
     app.config['SWAGGER'] = {
@@ -59,6 +68,7 @@ def create_app(init_swagger=True):
     bcrypt.init_app(app)
     cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
     jwt.init_app(app)
+    s3_service.init_app(app) # Инициализируем S3 сервис
 
     with app.app_context():
         # Импортируем модели, чтобы они были известны SQLAlchemy
@@ -73,12 +83,11 @@ def create_app(init_swagger=True):
         from .routes.playgrounds import playgrounds_bp
         from .routes.tournaments import tournaments_bp
         from .routes.posts import posts_bp
+        from .routes.sponsors import sponsors_bp
+        from .routes.social import social_bp
+        from .routes.settings import settings_bp
+        from .routes.lfg import lfg_bp
         
-        # Старые/неиспользуемые, которые могут быть удалены в будущем
-        from .routes.sessions import sessions_bp
-        from .routes.legacy import legacy_bp
-        from .routes.general import general_bp
-
         # Регистрация с корректными префиксами
         app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
         app.register_blueprint(users_bp, url_prefix='/api/v1/users')
@@ -88,8 +97,9 @@ def create_app(init_swagger=True):
         app.register_blueprint(playgrounds_bp, url_prefix='/api/v1/playgrounds')
         app.register_blueprint(tournaments_bp, url_prefix='/api/v1/tournaments')
         app.register_blueprint(posts_bp, url_prefix='/api/v1/posts')
-        app.register_blueprint(sessions_bp, url_prefix='/api/v1/sessions')
-        app.register_blueprint(legacy_bp, url_prefix='/api/v1/legacy')
-        app.register_blueprint(general_bp, url_prefix='/api/v1/general')
+        app.register_blueprint(sponsors_bp, url_prefix='/api/v1/sponsors')
+        app.register_blueprint(social_bp)
+        app.register_blueprint(settings_bp)
+        app.register_blueprint(lfg_bp, url_prefix='/api/v1')
 
     return app

@@ -1,32 +1,21 @@
-
 from functools import wraps
 from flask import request, jsonify
-import jwt
-import os
+from flask_jwt_extended import get_jwt_identity
 from app.models import User
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        if 'Authorization' in request.headers:
-            # Ожидаем заголовок в формате 'Bearer <token>'
-            token = request.headers['Authorization'].split(' ')[1]
-
-        if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
-
+def jwt_required(fn):
+    """
+    A decorator to protect routes with JWT authentication.
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
         try:
-            # Декодируем токен, используя SECRET_KEY
-            data = jwt.decode(token, os.environ.get('SECRET_KEY'), algorithms=['HS256'])
-            current_user = User.query.get(data['sub'])
+            verify_jwt_in_request()
+            user_id = get_jwt_identity()
+            current_user = User.query.get(user_id)
             if not current_user:
-                 return jsonify({'message': 'User not found!'}), 404
-        except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Token has expired!'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'message': 'Token is invalid!'}), 401
-
-        return f(current_user, *args, **kwargs)
-
-    return decorated
+                return jsonify({"error": "User not found"}), 404
+            return fn(current_user, *args, **kwargs)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+    return wrapper

@@ -1,6 +1,7 @@
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.s3_service import s3_service
+from app import s3_service # Изменено: импорт из пакета app
+import uuid
 
 uploads_bp = Blueprint('uploads', __name__)
 
@@ -10,14 +11,25 @@ def request_upload_url():
     """Создает presigned URL для прямой загрузки файла в S3-совместимое хранилище."""
     user_id = get_jwt_identity()
     data = request.get_json()
-    content_type = data.get('contentType')
+    filename = data.get('filename')
 
-    if not content_type:
-        return jsonify({"error": "contentType is required"}), 400
+    if not filename:
+        return jsonify({"error": "filename is required"}), 400
+
+    # Создаем уникальное имя объекта для хранения в S3
+    object_name = f"uploads/{user_id}/{uuid.uuid4()}-{filename}"
 
     try:
-        response_data = s3_service.generate_presigned_post_url(user_id, content_type)
+        # Вызываем обновленный метод сервиса
+        response_data = s3_service.generate_presigned_post_url(object_name)
+        if response_data is None:
+            # Логирование происходит внутри сервиса
+            return jsonify({"error": "Failed to generate presigned URL"}), 500
+
+        # Возвращаем URL и имя объекта клиенту
+        response_data['object_name'] = object_name
+
         return jsonify(response_data)
     except Exception as e:
-        # Здесь хорошо бы логировать ошибку
-        return jsonify({"error": str(e)}), 500
+        # Логирование ошибок здесь также важно
+        return jsonify({"error": "An internal error occurred", "message": str(e)}), 500

@@ -21,6 +21,64 @@ UserSports = db.Table('user_sports',
     db.Column('sportId', db.String, db.ForeignKey('sport.id'), primary_key=True)
 )
 
+class UserAchievement(db.Model):
+    __tablename__ = 'user_achievements'
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True)
+    achievementId = db.Column(UUID(as_uuid=True), db.ForeignKey('achievement.id'), primary_key=True)
+    unlockedAt = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    achievement = db.relationship('Achievement')
+
+Friendship = db.Table('friendships',
+    db.Column('user_id', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True),
+    db.Column('friend_id', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True)
+)
+
+UserFollows = db.Table('user_follows',
+    db.Column('follower_id', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True),
+    db.Column('followed_id', UUID(as_uuid=True), db.ForeignKey('user.id'), primary_key=True)
+)
+
+class FriendRequest(db.Model):
+    __tablename__ = 'friend_requests'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    from_user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
+    to_user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending', nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (db.UniqueConstraint('from_user_id', 'to_user_id', name='_from_to_uc'),)
+
+# --- Модели настроек ---
+
+class UserSettings(db.Model):
+    __tablename__ = 'user_settings'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False, unique=True)
+    theme = db.Column(db.String(50), default='light')
+    language = db.Column(db.String(10), default='en')
+
+    def to_dict(self):
+        return {
+            "theme": self.theme,
+            "language": self.language
+        }
+
+class UserPrivacySettings(db.Model):
+    __tablename__ = 'user_privacy_settings'
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False, unique=True)
+    profile_visibility = db.Column(db.String(50), default='all')
+    teams_visibility = db.Column(db.String(50), default='all')
+    messages_privacy = db.Column(db.String(50), default='friends')
+
+    def to_dict(self):
+        return {
+            "profile_visibility": self.profile_visibility,
+            "teams_visibility": self.teams_visibility,
+            "messages_privacy": self.messages_privacy
+        }
+
 # --- Основные модели ---
 
 class User(db.Model):
@@ -29,7 +87,6 @@ class User(db.Model):
     nickname = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     
-    # Новые поля
     firstName = db.Column(db.String(100), nullable=True)
     lastName = db.Column(db.String(100), nullable=True)
     birthDate = db.Column(db.DateTime, nullable=True)
@@ -41,6 +98,7 @@ class User(db.Model):
     gender = db.Column(db.String(50), nullable=True)
     phone = db.Column(db.String(50), nullable=True, unique=True)
     bio = db.Column(db.Text, nullable=True)
+    elo = db.Column(db.Integer, default=1200)
 
     # Связи
     player_profile = db.relationship('PlayerProfile', backref='user', uselist=False, cascade="all, delete-orphan")
@@ -50,8 +108,31 @@ class User(db.Model):
     comments = db.relationship('Comment', backref='author', lazy=True)
     teams = db.relationship('Team', secondary=TeamMembers, backref=db.backref('members', lazy='dynamic'))
     sports = db.relationship('Sport', secondary=UserSports, backref=db.backref('users', lazy='dynamic'))
+    unlockedAchievements = db.relationship('UserAchievement', backref='user', cascade="all, delete-orphan")
+    settings = db.relationship('UserSettings', backref='user', uselist=False, cascade="all, delete-orphan")
+    privacy_settings = db.relationship('UserPrivacySettings', backref='user', uselist=False, cascade="all, delete-orphan")
 
-    def to_dict(self, include_teams=False, include_sports=True):
+    followingTeams = db.relationship('Team', secondary=TeamFollowers, backref=db.backref('followers', lazy='dynamic'))
+    friends = db.relationship('User',
+                              secondary=Friendship,
+                              primaryjoin=(Friendship.c.user_id == id),
+                              secondaryjoin=(Friendship.c.friend_id == id),
+                              lazy='dynamic')
+    followingUsers = db.relationship('User', 
+                                 secondary=UserFollows,
+                                 primaryjoin=(UserFollows.c.follower_id == id),
+                                 secondaryjoin=(UserFollows.c.followed_id == id),
+                                 backref=db.backref('followers', lazy='dynamic'), 
+                                 lazy='dynamic')
+
+    def to_summary_dict(self):
+        return {
+            "id": self.id,
+            "nickname": self.nickname,
+            "avatarUrl": self.avatarUrl
+        }
+
+    def to_dict(self, include_teams=False, include_sports=True, profile_buttons=None, include_settings=False):
         data = {
             "id": self.id,
             "email": self.email,
@@ -67,18 +148,36 @@ class User(db.Model):
             "gender": self.gender,
             "phone": self.phone,
             "bio": self.bio,
+            "elo": self.elo
         }
         
-        # Вкладываем профиль игрока, если он существует
         if self.player_profile:
             data['player_profile'] = self.player_profile.to_dict()
-            # elo выводим в корневом объекте для совместимости с примером
-            data['elo'] = self.player_profile.elo
+        else:
+            # Если профиля игрока нет, создаем его со значениями по-умолчанию
+            data['player_profile'] = PlayerProfile().to_dict()
+
 
         if include_teams:
             data['teams'] = [team.to_dict() for team in self.teams]
         if include_sports:
             data['sports'] = [sport.to_dict() for sport in self.sports]
+
+        data['unlockedAchievements'] = [ua.achievement.id for ua in self.unlockedAchievements]
+
+        data['counters'] = {
+            "friends": self.friends.count(),
+            "followers": self.followers.count(),
+            "followingUsers": self.followingUsers.count(),
+            "followingTeams": len(self.followingTeams)
+        }
+
+        if profile_buttons is not None:
+            data['profile_buttons'] = profile_buttons
+
+        if include_settings:
+            data['settings'] = self.settings.to_dict() if self.settings else UserSettings().to_dict()
+            data['privacy'] = self.privacy_settings.to_dict() if self.privacy_settings else UserPrivacySettings().to_dict()
             
         return data
 
@@ -87,7 +186,7 @@ class Team(db.Model):
     name = db.Column(db.String(120), nullable=False)
     logoUrl = db.Column(db.String(200))
     captainId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
-    sportId = db.Column(db.String, db.ForeignKey('sport.id')) # <- Заменили game
+    sportId = db.Column(db.String, db.ForeignKey('sport.id')) 
     rank = db.Column(db.Integer, default=1200)
     city = db.Column(db.String(100))
     wins = db.Column(db.Integer, default=0)
@@ -104,7 +203,14 @@ class Team(db.Model):
     
     posts = db.relationship('Post', backref='team', lazy=True)
     captain = db.relationship('User', foreign_keys=[captainId])
-    sport = db.relationship('Sport') # <- Связь для to_dict
+    sport = db.relationship('Sport')
+
+    def to_summary_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "logoUrl": self.logoUrl
+        }
 
     def to_dict(self, include_members=False):
         data = {
@@ -126,7 +232,7 @@ class Team(db.Model):
             "avgRating": self.avgRating,
             "createdAt": self.createdAt.isoformat()
         }
-        if self.sport: # <- Добавляем спорт
+        if self.sport:
             data['sport'] = self.sport.to_dict()
             
         if include_members:
@@ -139,14 +245,24 @@ class PlayerProfile(db.Model):
     userId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), unique=True, nullable=False)
     matchesPlayed = db.Column(db.Integer, default=0)
     wins = db.Column(db.Integer, default=0)
-    elo = db.Column(db.Integer, default=1200) # <- Перенесли elo
+    goals = db.Column(db.Integer, default=0)
+    assists = db.Column(db.Integer, default=0)
+    mvpAwards = db.Column(db.Integer, default=0)
 
     def to_dict(self):
+        # We can get the elo from the user model directly
+        user = User.query.get(self.userId)
+        elo = user.elo if user else 1200
+
         return {
             "matchesPlayed": self.matchesPlayed,
             "wins": self.wins,
-            "elo": self.elo
+            "goals": self.goals,
+            "assists": self.assists,
+            "mvpAwards": self.mvpAwards,
+            "elo": elo
         }
+
 
 class RefereeProfile(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -327,4 +443,31 @@ class Upload(db.Model):
             "status": self.status,
             "createdAt": self.created_at.isoformat(),
             "expiresAt": self.expires_at.isoformat(),
+        }
+
+class LfgPost(db.Model):
+    __tablename__ = 'lfg_posts'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(50), nullable=False) # 'player' or 'team'
+    authorId = db.Column(UUID(as_uuid=True), db.ForeignKey('user.id'), nullable=False)
+    teamId = db.Column(UUID(as_uuid=True), db.ForeignKey('team.id'), nullable=True)
+    sportId = db.Column(db.String, db.ForeignKey('sport.id'), nullable=False)
+    requiredRole = db.Column(db.String(100))
+    message = db.Column(db.Text)
+    createdAt = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    author = db.relationship('User', backref=db.backref('lfg_posts', lazy=True))
+    team = db.relationship('Team', backref=db.backref('lfg_posts', lazy=True))
+    sport = db.relationship('Sport', backref=db.backref('lfg_posts', lazy=True))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "type": self.type,
+            "author": self.author.to_summary_dict(),
+            "team": self.team.to_summary_dict() if self.team else None,
+            "sport": self.sport.to_dict(),
+            "requiredRole": self.requiredRole,
+            "message": self.message,
+            "createdAt": self.createdAt.isoformat()
         }
