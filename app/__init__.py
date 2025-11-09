@@ -34,7 +34,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=365)
     
     # --- S3 Конфигурация ---
     app.config['S3_ENDPOINT'] = os.environ.get('S3_ENDPOINT')
