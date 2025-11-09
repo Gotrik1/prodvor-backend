@@ -12,10 +12,12 @@ def get_playgrounds():
     Get all playgrounds
     ---
     tags:
-        - Playgrounds
+      - Playgrounds
+    summary: Get all playgrounds
+    description: Retrieves a list of all available playgrounds.
     responses:
-        '200':
-            description: A list of playgrounds.
+      200:
+        description: A list of playgrounds.
     """
     playgrounds = Playground.query.all()
     return jsonify([p.to_dict() for p in playgrounds])
@@ -27,9 +29,11 @@ def create_playground():
     Create a new playground
     ---
     tags:
-        - Playgrounds
+      - Playgrounds
+    summary: Create a new playground
+    description: Creates a new playground. Requires authentication.
     security:
-        - bearerAuth: []
+      - bearerAuth: []
     requestBody:
       required: true
       content:
@@ -40,17 +44,21 @@ def create_playground():
             properties:
               name:
                 type: string
+                example: "Central Park Field"
               address:
                 type: string
+                example: "123 Main St, Anytown"
               type:
                 type: string
+                example: "Football Pitch"
               surface:
                 type: string
+                example: "Artificial Turf"
     responses:
-        '201':
-            description: Playground created successfully.
-        '400':
-            description: Missing required fields.
+      201:
+        description: Playground created successfully.
+      400:
+        description: Bad request (missing required fields).
     """
     data = request.get_json()
     if not data or not data.get('name') or not data.get('address'):

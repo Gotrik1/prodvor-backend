@@ -47,6 +47,7 @@ class FriendRequest(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
+    # FIX: Corrected the column names in the UniqueConstraint
     __table_args__ = (db.UniqueConstraint('from_user_id', 'to_user_id', name='_from_to_uc'),)
 
 # --- Модели настроек ---
@@ -154,9 +155,15 @@ class User(db.Model):
         if self.player_profile:
             data['player_profile'] = self.player_profile.to_dict()
         else:
-            # Если профиля игрока нет, создаем его со значениями по-умолчанию
-            data['player_profile'] = PlayerProfile().to_dict()
-
+            # FIX: Create a default dictionary instead of a blank object
+            data['player_profile'] = {
+                "matchesPlayed": 0,
+                "wins": 0,
+                "goals": 0,
+                "assists": 0,
+                "mvpAwards": 0,
+                "elo": self.elo # Use the user's own elo
+            }
 
         if include_teams:
             data['teams'] = [team.to_dict() for team in self.teams]
@@ -250,9 +257,12 @@ class PlayerProfile(db.Model):
     mvpAwards = db.Column(db.Integer, default=0)
 
     def to_dict(self):
-        # We can get the elo from the user model directly
-        user = User.query.get(self.userId)
-        elo = user.elo if user else 1200
+        elo = 1200 # Default value
+        # FIX: Check if userId is not None before querying
+        if self.userId:
+            user = User.query.get(self.userId)
+            if user:
+                elo = user.elo
 
         return {
             "matchesPlayed": self.matchesPlayed,

@@ -9,7 +9,30 @@ teams_bp = Blueprint('teams', __name__)
 
 @teams_bp.route('/', methods=['GET'])
 def get_teams():
-    """Возвращает пагинированный список всех команд."""
+    """
+    Get all teams (paginated)
+    ---
+    tags:
+      - Teams
+    summary: Get all teams
+    description: Returns a paginated list of all teams.
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+        description: The page number for pagination.
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 12
+        description: The number of teams to return per page.
+    responses:
+      200:
+        description: A paginated list of teams.
+    """
     try:
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 12))
@@ -34,7 +57,26 @@ def get_teams():
 
 @teams_bp.route('/<string:team_id>', methods=['GET'])
 def get_team(team_id):
-    """Возвращает команду по ID с капитаном и списком участников."""
+    """
+    Get a specific team by ID
+    ---
+    tags:
+      - Teams
+    summary: Get a single team by its ID
+    description: Returns details for a single team, including its members.
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team to retrieve.
+    responses:
+      200:
+        description: Team details.
+      404:
+        description: Team not found.
+    """
     team = Team.query.get_or_404(team_id)
     return jsonify(team.to_dict(include_members=True))
 
@@ -42,7 +84,45 @@ def get_team(team_id):
 @teams_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_team():
-    """Создает новую команду."""
+    """
+    Create a new team
+    ---
+    tags:
+      - Teams
+    summary: Create a new team
+    description: Creates a new team. The authenticated user will become the captain.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - sportId
+            properties:
+              name:
+                type: string
+                example: "The All-Stars"
+              sportId:
+                type: string
+                example: "sport-1"
+              city:
+                type: string
+                example: "New York"
+              logoUrl:
+                type: string
+                example: "https://example.com/logo.png"
+    responses:
+      201:
+        description: Team created successfully.
+      400:
+        description: Bad request (missing required fields).
+      404:
+        description: Captain user not found.
+    """
     current_user_id = get_jwt_identity()
     data = request.get_json()
 
@@ -74,7 +154,38 @@ def create_team():
 @teams_bp.route('/<string:team_id>/members/<string:user_id>', methods=['DELETE'])
 @jwt_required()
 def remove_member(team_id, user_id):
-    """Удаляет участника из команды."""
+    """
+    Remove a member from a team
+    ---
+    tags:
+      - Teams
+    summary: Remove a member from a team (Captain only)
+    description: Removes a specified user from a team. This action can only be performed by the team captain.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team.
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the user to remove.
+    responses:
+      200:
+        description: Player removed successfully.
+      400:
+        description: Bad request (captain cannot remove themselves).
+      403:
+        description: Forbidden (only the captain can remove members).
+      404:
+        description: Not found (team or player not found).
+    """
     current_user_id = get_jwt_identity()
     team = Team.query.get_or_404(team_id)
 
@@ -97,7 +208,42 @@ def remove_member(team_id, user_id):
 @teams_bp.route('/<string:team_id>/logo', methods=['POST'])
 @jwt_required()
 def update_team_logo(team_id):
-    """Обновляет логотип команды."""
+    """
+    Update team logo
+    ---
+    tags:
+      - Teams
+    summary: Update team logo (Captain only)
+    description: Updates the logo URL for a team. This action can only be performed by the team captain.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team to update.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [fileUrl]
+            properties:
+              fileUrl:
+                type: string
+                format: uri
+                example: "https://example.com/new_logo.png"
+    responses:
+      200:
+        description: Logo updated successfully.
+      400:
+        description: Bad request (missing fileUrl).
+      403:
+        description: Forbidden (only the captain can update the logo).
+    """
     current_user_id = get_jwt_identity()
     team = Team.query.get_or_404(team_id)
 
@@ -118,7 +264,30 @@ def update_team_logo(team_id):
 @teams_bp.route('/<string:team_id>/apply', methods=['POST'])
 @jwt_required()
 def apply_to_team(team_id):
-    """Подать заявку на вступление в команду."""
+    """
+    Apply to join a team
+    ---
+    tags:
+      - Teams - Applications
+    summary: Apply to join a team
+    description: Submits an application to join a specific team. A user cannot apply if they are already a member or have a pending application.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team to apply to.
+    responses:
+      200:
+        description: Application submitted successfully.
+      400:
+        description: Bad request (already a member or has a pending application).
+      404:
+        description: Team not found.
+    """
     current_user_id = get_jwt_identity()
     team = Team.query.get_or_404(team_id)
     user = User.query.get(current_user_id)
@@ -142,7 +311,30 @@ def apply_to_team(team_id):
 @teams_bp.route('/<string:team_id>/applications', methods=['GET'])
 @jwt_required()
 def get_applications(team_id):
-    """Получить список заявок для команды (только для капитана)."""
+    """
+    Get team applications
+    ---
+    tags:
+      - Teams - Applications
+    summary: Get team applications (Captain only)
+    description: Retrieves a list of users who have pending applications to join the team. This is only visible to the team captain.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team.
+    responses:
+      200:
+        description: A list of user summaries for the applicants.
+      403:
+        description: Forbidden (only the captain can view applications).
+      404:
+        description: Team not found.
+    """
     current_user_id = get_jwt_identity()
     team = Team.query.get_or_404(team_id)
 
@@ -158,7 +350,50 @@ def get_applications(team_id):
 @teams_bp.route('/<string:team_id>/applications/<string:user_id>/respond', methods=['POST'])
 @jwt_required()
 def respond_to_application(team_id, user_id):
-    """Принять или отклонить заявку (только для капитана)."""
+    """
+    Respond to an application
+    ---
+    tags:
+      - Teams - Applications
+    summary: Respond to an application (Captain only)
+    description: Accepts or declines a user's application to join the team. This is only available to the team captain.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team.
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the applicant user.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [action]
+            properties:
+              action:
+                type: string
+                enum: [accept, decline]
+                description: The action to take on the application.
+    responses:
+      200:
+        description: Action completed successfully.
+      400:
+        description: Invalid action.
+      403:
+        description: Forbidden (only captain can respond).
+      404:
+        description: Application or user not found.
+    """
     current_user_id = get_jwt_identity()
     team = Team.query.get_or_404(team_id)
 
@@ -193,7 +428,35 @@ def respond_to_application(team_id, user_id):
 @teams_bp.route('/<string:team_id>/follow', methods=['POST'])
 @jwt_required()
 def follow_team(team_id):
-    """Подписаться или отписаться от команды."""
+    """
+    Follow or unfollow a team
+    ---
+    tags:
+      - Teams - Following
+    summary: Toggle follow status for a team
+    description: Allows an authenticated user to follow or unfollow a team.
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+        description: The ID of the team to follow/unfollow.
+    responses:
+      200:
+        description: The user's new following status.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                isFollowing:
+                  type: boolean
+    """
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     team = Team.query.get_or_404(team_id)

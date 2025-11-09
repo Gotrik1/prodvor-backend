@@ -20,6 +20,7 @@ SQLAlchemy==2.0.28
 psycopg2-binary
 zipp==3.18.1
 minio==7.2.7
+flask-swagger-ui==4.11.1
 
 # --- Добавлено для перехода в прод ---
 gunicorn==22.0.0

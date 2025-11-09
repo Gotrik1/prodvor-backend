@@ -10,21 +10,23 @@ def get_sports():
     Get all sports
     ---
     tags:
-        - Sports
+      - Sports
+    summary: Get all sports
+    description: Retrieves a list of all available sports.
     responses:
-        '200':
-            description: A list of sports.
-            schema:
-                type: array
-                items:
-                    type: object
-                    properties:
-                        id:
-                            type: string
-                        name:
-                            type: string
-                        isTeamSport:
-                            type: boolean
+      200:
+        description: A list of sports.
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              isTeamSport:
+                type: boolean
     """
     sports = Sport.query.all()
     return jsonify([s.to_dict() for s in sports])
@@ -35,26 +37,30 @@ def create_sport():
     Create a new sport
     ---
     tags:
-        - Sports
-    parameters:
-        -   in: body
-            name: body
-            required: true
-            schema:
-                type: object
-                required:
-                    - name
-                    - isTeamSport
-                properties:
-                    name:
-                        type: string
-                    isTeamSport:
-                        type: boolean
+      - Sports
+    summary: Create a new sport
+    description: Creates a new sport.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - isTeamSport
+            properties:
+              name:
+                type: string
+                example: "Basketball"
+              isTeamSport:
+                type: boolean
+                example: true
     responses:
-        '201':
-            description: Sport created successfully
-        '400':
-            description: Missing name or isTeamSport, or sport with this name already exists
+      201:
+        description: Sport created successfully.
+      400:
+        description: Bad request (missing fields or sport with this name already exists).
     """
     data = request.get_json()
     if not data or not all(k in data for k in ('name', 'isTeamSport')):

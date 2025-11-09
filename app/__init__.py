@@ -39,24 +39,23 @@ def create_app(init_swagger=True):
     app.config['S3_SECURE'] = os.environ.get('S3_SECURE', 'False').lower() in ['true', '1']
 
     # --- Конфигурация Swagger ---
-    app.config['SWAGGER'] = {
-        'title': 'Prodvor API',
-        'uiversion': 3,
-        'specs_route': '/apidocs/',
-        'swagger_ui_config': {
-            'urls': [{'url': '/static/swagger.json', 'name': 'API'}]
-        },
-        'securityDefinitions': {
-            'bearerAuth': {
-                'type': 'apiKey',
-                'name': 'Authorization',
-                'in': 'header',
-                'description': "JWT-токен в формате 'Bearer <token>'"
-            }
-        }
-    }
     if init_swagger:
-        Swagger(app)
+        swagger_config = {
+            "headers": [],
+            "specs": [
+                {
+                    "endpoint": 'apispec_1',
+                    "route": '/apispec_1.json',
+                    "rule_filter": lambda rule: True,  # all in
+                    "model_filter": lambda tag: True,  # all in
+                }
+            ],
+            "static_url_path": "/flasgger_static",
+            "swagger_ui": True,
+            "specs_route": "/apidocs/"
+        }
+        swagger = Swagger(app, config=swagger_config)
+
 
     @app.route('/')
     def index():
@@ -68,10 +67,10 @@ def create_app(init_swagger=True):
     bcrypt.init_app(app)
     cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
     jwt.init_app(app)
-    s3_service.init_app(app) # Инициализируем S3 сервис
+    s3_service.init_app(app)
 
     with app.app_context():
-        # Импортируем модели, чтобы они были известны SQLAlchemy
+        # Импортируем модели
         from . import models
 
         # --- Регистрация Blueprints ---
@@ -84,11 +83,9 @@ def create_app(init_swagger=True):
         from .routes.tournaments import tournaments_bp
         from .routes.posts import posts_bp
         from .routes.sponsors import sponsors_bp
-        from .routes.social import social_bp
-        from .routes.settings import settings_bp
         from .routes.lfg import lfg_bp
         
-        # Регистрация с корректными префиксами
+        # Регистрация с префиксами
         app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
         app.register_blueprint(users_bp, url_prefix='/api/v1/users')
         app.register_blueprint(uploads_bp, url_prefix='/api/v1/uploads')
@@ -98,8 +95,6 @@ def create_app(init_swagger=True):
         app.register_blueprint(tournaments_bp, url_prefix='/api/v1/tournaments')
         app.register_blueprint(posts_bp, url_prefix='/api/v1/posts')
         app.register_blueprint(sponsors_bp, url_prefix='/api/v1/sponsors')
-        app.register_blueprint(social_bp)
-        app.register_blueprint(settings_bp)
         app.register_blueprint(lfg_bp, url_prefix='/api/v1')
 
     return app

@@ -7,8 +7,32 @@ lfg_bp = Blueprint('lfg_bp', __name__)
 @lfg_bp.route('/lfg', methods=['GET'])
 def get_lfg_posts():
     """
-    Получение списка всех объявлений LFG.
-    Query-параметры для фильтрации: ?type=player, ?sportId=..., ?role=....
+    Get all LFG posts with optional filters
+    ---
+    tags:
+      - LFG (Looking for Group)
+    summary: Get all LFG posts
+    description: Retrieves a list of all LFG posts, with optional query parameters for filtering.
+    parameters:
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum: [player, team]
+        description: Filter by post type (player looking for team, or team looking for player).
+      - in: query
+        name: sportId
+        schema:
+          type: string
+        description: Filter by sport ID.
+      - in: query
+        name: role
+        schema:
+          type: string
+        description: Filter by required player role (e.g., 'goalkeeper').
+    responses:
+      200:
+        description: A list of LFG posts.
     """
     args = request.args
     query = LfgPost.query
@@ -28,9 +52,55 @@ def get_lfg_posts():
 @jwt_required
 def create_lfg_post(current_user):
     """
-    Создание нового объявления.
-    Auth: Требуется. ID автора берется из токена.
-    Тело запроса: { "type": "player" | "team", "teamId": "integer" (optional), "sportId": "string", "requiredRole": "string", "message": "string" }.
+    Create a new LFG post
+    ---
+    tags:
+      - LFG (Looking for Group)
+    summary: Create a new LFG post
+    description: >
+      Creates a new LFG post. User must be authenticated.
+      If the post type is 'team', the user must be the captain of the specified team.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - type
+              - sportId
+              - requiredRole
+              - message
+            properties:
+              type:
+                type: string
+                enum: [player, team]
+                description: The type of LFG post.
+              teamId:
+                type: integer
+                description: The ID of the team (required if type is 'team').
+              sportId:
+                type: string
+                description: The ID of the sport.
+              requiredRole:
+                type: string
+                description: The role required (e.g., 'forward', 'defender').
+                example: "Goalkeeper"
+              message:
+                type: string
+                description: A message for the post.
+                example: "Looking for a team for the weekend tournament."
+    responses:
+      201:
+        description: LFG post created successfully.
+      400:
+        description: Bad request (missing fields or invalid type).
+      403:
+        description: Forbidden (user is not the captain of the team).
+      404:
+        description: Not found (sport or team not found).
     """
     data = request.get_json()
 

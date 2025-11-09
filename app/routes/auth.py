@@ -8,6 +8,58 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """
+    Register a new user
+    ---
+    tags:
+      - Auth
+    summary: Register a new user
+    description: Creates a new user with the given email, nickname, password, and role.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - nickname
+              - password
+            properties:
+              email:
+                type: string
+                example: "user@example.com"
+              nickname:
+                type: string
+                example: "new_user_123"
+              password:
+                type: string
+                example: "strongpassword"
+              role:
+                type: string
+                enum: ['player', 'referee', 'coach']
+                default: 'player'
+              city:
+                type: string
+                example: "Moscow"
+              firstName:
+                type: string
+                example: "Ivan"
+              lastName:
+                type: string
+                example: "Ivanov"
+              age:
+                type: integer
+                example: 25
+              gender:
+                type: string
+                enum: ['male', 'female']
+    responses:
+      201:
+        description: User created successfully.
+      409:
+        description: User with this email or nickname already exists.
+    """
     data = request.get_json()
     
     email = data.get('email')
@@ -48,6 +100,35 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """
+    Log in a user
+    ---
+    tags:
+      - Auth
+    summary: Authenticate a user
+    description: Authenticates a user with email and password, returning access and refresh tokens.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                example: "user@example.com"
+              password:
+                type: string
+                example: "strongpassword"
+    responses:
+      200:
+        description: Login successful.
+      401:
+        description: Invalid credentials.
+    """
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -80,11 +161,23 @@ def login():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
+    """
+    Refresh access token
+    ---
+    tags:
+      - Auth
+    summary: Get a new access token
+    description: Uses a valid refresh token to get a new access token. The refresh token must be sent in the Authorization header.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Access token refreshed successfully.
+      401:
+        description: Unauthorized (invalid or expired refresh token).
+    """
     current_user_id = get_jwt_identity()
     jti = get_jwt()['jti'] # Уникальный идентификатор JWT
-    
-    # Здесь можно добавить проверку, не отозван ли refresh token, если потребуется
-    # Например, проверив его наличие в UserSessions
     
     new_access_token = create_access_token(identity=current_user_id)
     
@@ -93,12 +186,36 @@ def refresh():
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required(refresh=True) # Требуем refresh токен для выхода
 def logout():
+    """
+    Log out a user
+    ---
+    tags:
+      - Auth
+    summary: Invalidate a refresh token
+    description: Logs the user out by deleting their session based on the provided refresh token.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - refreshToken
+            properties:
+              refreshToken:
+                type: string
+                description: The refresh token to invalidate.
+    responses:
+      200:
+        description: Logout successful.
+      401:
+        description: Unauthorized.
+    """
     jti = get_jwt()['jti']
     current_user_id = get_jwt_identity()
     
-    # Вместо jti, будем искать по userId и самому токену, если это необходимо
-    # Но для простого логаута достаточно удалить сессию по ID пользователя.
-    # Для более безопасного логаута (выход со всех устройств), нужно будет реализовать более сложную логику.
     token = request.get_json().get('refreshToken')
     
     session = UserSession.query.filter_by(refreshToken=token).first()

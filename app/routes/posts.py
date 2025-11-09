@@ -12,10 +12,12 @@ def get_posts():
     Get all posts
     ---
     tags:
-        - Posts
+      - Posts
+    summary: Get all posts
+    description: Retrieves a list of all posts in descending order of creation time.
     responses:
-        '200':
-            description: A list of posts.
+      200:
+        description: A list of posts.
     """
     posts = Post.query.order_by(Post.timestamp.desc()).all()
     return jsonify([p.to_dict() for p in posts])
@@ -27,9 +29,11 @@ def create_post():
     Create a new post
     ---
     tags:
-        - Posts
+      - Posts
+    summary: Create a new post
+    description: Creates a new post. The author ID is taken from the authentication token.
     security:
-        - bearerAuth: []
+      - bearerAuth: []
     requestBody:
       required: true
       content:
@@ -40,13 +44,16 @@ def create_post():
             properties:
               content:
                 type: string
+                example: "This is a new post!"
               teamId:
                 type: string
+                description: The ID of the team to associate the post with (optional).
+                example: "123e4567-e89b-12d3-a456-426614174000"
     responses:
-        '201':
-            description: Post created successfully.
-        '400':
-            description: Missing content.
+      201:
+        description: Post created successfully.
+      400:
+        description: Bad request (missing content).
     """
     data = request.get_json()
     if not data or not data.get('content'):
