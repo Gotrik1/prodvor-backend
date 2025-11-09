@@ -1,6 +1,9 @@
-from flask import Blueprint, jsonify, request
+
+from flask import Blueprint, jsonify, request, abort
 from app import db
 from app.models import Sport
+from app.routes.users import serialize_pagination
+import uuid
 
 sports_bp = Blueprint('sports', __name__)
 
@@ -12,24 +15,37 @@ def get_sports():
     tags:
       - Sports
     summary: Get all sports
-    description: Retrieves a list of all available sports.
+    description: Retrieves a paginated list of all available sports.
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 10
     responses:
       200:
-        description: A list of sports.
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              isTeamSport:
-                type: boolean
+        description: A paginated list of sports.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Sport'
+                meta:
+                  $ref: '#/components/schemas/Pagination'
     """
-    sports = Sport.query.all()
-    return jsonify([s.to_dict() for s in sports])
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    sports_pagination = Sport.query.paginate(page=page, per_page=per_page, error_out=False)
+    return jsonify(serialize_pagination(sports_pagination, 'data', lambda s: s.to_dict()))
 
 @sports_bp.route('/sports', methods=['POST'])
 def create_sport():
@@ -45,17 +61,7 @@ def create_sport():
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - name
-              - isTeamSport
-            properties:
-              name:
-                type: string
-                example: "Basketball"
-              isTeamSport:
-                type: boolean
-                example: true
+            $ref: '#/components/schemas/Sport'
     responses:
       201:
         description: Sport created successfully.
@@ -64,15 +70,14 @@ def create_sport():
     """
     data = request.get_json()
     if not data or not all(k in data for k in ('name', 'isTeamSport')):
-        return jsonify({'error': 'Missing name or isTeamSport'}), 400
+        abort(400, description='Missing name or isTeamSport')
 
-    # Check for duplicate sport name
     if Sport.query.filter_by(name=data['name']).first():
-        return jsonify({'error': 'Sport with this name already exists'}), 400
+        abort(400, description='Sport with this name already exists')
 
-    new_sport_id = f"sport-{Sport.query.count() + 1}"
+    # Using UUID for consistency with other models
     new_sport = Sport(
-        id=new_sport_id,
+        id=str(uuid.uuid4()),
         name=data['name'],
         isTeamSport=data['isTeamSport']
     )

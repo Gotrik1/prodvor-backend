@@ -1,0 +1,841 @@
+openapi: 3.0.3
+info:
+  title: Sport Matching API
+  description: A RESTful API for a sports team and player matching platform.
+  version: 1.0.0
+servers:
+  - url: https://prodvor.website
+    description: Production Server
+  - url: http://localhost:5000
+    description: Local Development Server
+tags:
+  - name: Auth
+    description: User authentication and registration
+  - name: LFG
+    description: Looking for Group/Player posts
+  - name: Playgrounds
+    description: Operations with sports playgrounds
+  - name: Posts
+    description: Social feed posts
+  - name: Sponsors
+    description: Commercial sponsors
+  - name: Sports
+    description: Available sports
+  - name: User Profile
+    description: User profile management
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in a user
+      description: Authenticates a user with email and password, returning access and refresh tokens.
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+            examples:
+              successful_login:
+                value:
+                  email: user@example.com
+                  password: securepassword123
+      responses:
+        '200':
+          description: Login successful. Returns access and refresh tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out a user (stateless)
+      description: Logs the user out. In a stateless JWT setup, this action is handled by the client discarding the token. This endpoint is provided for API completeness.
+      operationId: authLogout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out successfully. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Uses a valid refresh token to get a new access token.
+      operationId: authRefresh
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: def50200...
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Access token refreshed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new user with the given email, nickname, password, and role.
+      operationId: authRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '409':
+          description: User with this email or nickname already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/lfg:
+    get:
+      tags:
+        - LFG
+      summary: Get all LFG posts with optional filters
+      description: Retrieves a list of all LFG posts, with optional query parameters for filtering.
+      operationId: lfgList
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - name: type
+          in: query
+          description: Filter by post type (player looking for team, or team looking for player).
+          schema:
+            type: string
+            enum: [player, team]
+        - name: sportId
+          in: query
+          description: Filter by sport ID.
+          schema:
+            type: string
+            example: 'sport-1'
+        - name: role
+          in: query
+          description: Filter by required player role (e.g., 'goalkeeper').
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A paginated list of LFG posts.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LfgPost'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - data
+                  - meta
+    post:
+      tags:
+        - LFG
+      summary: Create a new LFG post
+      description: "Creates a new LFG post. User must be authenticated. If the post type is 'team', the user must be the captain of the specified team."
+      operationId: lfgCreate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LfgCreate'
+            examples:
+              player_lfg:
+                summary: Player looking for a team
+                value:
+                  type: player
+                  sportId: sport-1
+                  requiredRole: Forward
+                  message: Experienced forward looking for a competitive team for the new season.
+              team_lfg:
+                summary: Team looking for a player
+                value:
+                  type: team
+                  sportId: sport-2
+                  teamId: 123e4567-e89b-12d3-a456-426614174000
+                  requiredRole: Goalkeeper
+                  message: Our team needs a reliable goalkeeper for weekend leagues.
+      responses:
+        '201':
+          description: LFG post created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LfgPost'
+        '400':
+          description: Bad request (missing fields or invalid type).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/playgrounds/playgrounds:
+    get:
+      tags:
+        - Playgrounds
+      summary: Get all playgrounds
+      description: Retrieves a paginated list of all available playgrounds.
+      operationId: playgroundsList
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+      responses:
+        '200':
+          description: A paginated list of playgrounds.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Playground'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - data
+                  - meta
+    post:
+      tags:
+        - Playgrounds
+      summary: Create a new playground
+      description: Creates a new playground. Requires authentication.
+      operationId: playgroundsCreate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Playground'
+      responses:
+        '201':
+          description: Playground created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playground'
+        '400':
+          description: Bad request (missing required fields).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/posts/posts:
+    get:
+      tags:
+        - Posts
+      summary: Get all posts
+      description: Retrieves a paginated list of all posts in descending order of creation time.
+      operationId: postsList
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+      responses:
+        '200':
+          description: A paginated list of posts.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - data
+                  - meta
+    post:
+      tags:
+        - Posts
+      summary: Create a new post
+      description: Creates a new post. The author ID is taken from the authentication token.
+      operationId: postsCreate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreate'
+            examples:
+              new_post:
+                value:
+                  content: Just had a great match! Looking forward to the next one.
+                  teamId: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '201':
+          description: Post created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Bad request (missing content).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/sponsors/sponsors:
+    get:
+      tags:
+        - Sponsors
+      summary: Get all sponsors
+      description: Retrieves a paginated list of all sponsors.
+      operationId: sponsorsList
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+      responses:
+        '200':
+          description: A paginated list of sponsors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sponsor'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - data
+                  - meta
+  /api/v1/sports/sports:
+    get:
+      tags:
+        - Sports
+      summary: Get all sports
+      description: Retrieves a paginated list of all available sports.
+      operationId: sportsList
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+      responses:
+        '200':
+          description: A paginated list of sports.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sport'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                required:
+                  - data
+                  - meta
+    post:
+      tags:
+        - Sports
+      summary: Create a new sport
+      description: Creates a new sport. (Note: Should ideally be an admin-only endpoint).
+      operationId: sportsCreate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SportCreate'
+      responses:
+        '201':
+          description: Sport created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sport'
+        '400':
+          description: Bad request (missing fields or sport with this name already exists).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/me:
+    get:
+      tags:
+        - User Profile
+      summary: Get current user's profile
+      description: Retrieves the complete profile information for the currently authenticated user, including teams and settings.
+      operationId: usersGetMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile data successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+        - User Profile
+      summary: Get user profile by ID
+      description: Retrieves public profile information for a specific user.
+      operationId: usersGetById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: The UUID of the user to retrieve.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User profile data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT Authorization header using the Bearer scheme. Example: `Authorization: Bearer {token}`"
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: The page number for pagination.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPageParam:
+      name: per_page
+      in: query
+      description: The number of items to return per page.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+  responses:
+    Unauthorized:
+      description: Unauthorized. JWT is missing, invalid, or expired.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden. The client does not have sufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found. The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        refreshToken:
+          type: string
+          example: def50200a5d7a5b3d693a0b768a9946893c8309d73c88b20a324b17f4625f38e
+      required:
+        - accessToken
+        - refreshToken
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        authorId:
+          type: string
+          format: uuid
+          example: 989d3e6f-3290-481b-a4a8-690a61555543
+        content:
+          type: string
+          example: This is a new post!
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - authorId
+        - content
+        - createdAt
+      additionalProperties: false
+    Playground:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-7890-1234-567890abcdef
+        name:
+          type: string
+          example: Central Park Field
+        address:
+          type: string
+          example: 123 Main St, Anytown
+        type:
+          type: string
+          example: Football Pitch
+        surface:
+          type: string
+          example: Artificial Turf
+      required:
+        - id
+        - name
+        - address
+    Sponsor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: b2c3d4e5-f6a7-8901-2345-67890abcdef1
+        name:
+          type: string
+          example: "Sport-Drinks Inc."
+        logoUrl:
+          type: string
+          format: uri
+          example: https://example.com/logo.png
+        websiteUrl:
+          type: string
+          format: uri
+          example: https://sport-drinks.com
+      required:
+        - id
+        - name
+    Sport:
+      type: object
+      properties:
+        id:
+          type: string
+          example: sport-1
+        name:
+          type: string
+          example: Football
+        isTeamSport:
+          type: boolean
+          example: true
+      required:
+        - id
+        - name
+        - isTeamSport
+    LfgPost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [player, team]
+        sportId:
+          type: string
+          example: sport-1
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        requiredRole:
+          type: string
+        message:
+          type: string
+        authorId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - sportId
+        - requiredRole
+        - message
+        - authorId
+        - createdAt
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 989d3e6f-3290-481b-a4a8-690a61555543
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        nickname:
+          type: string
+          example: player_one
+        role:
+          type: string
+          enum: [player, manager]
+          example: player
+        createdAt:
+          type: string
+          format: date-time
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+          description: List of teams the user is a member of.
+        settings:
+          type: object
+          description: User-specific settings.
+      required:
+        - id
+        - email
+        - nickname
+        - role
+        - createdAt
+      additionalProperties: false
+    UserLogin:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+      additionalProperties: false
+    UserRegistration:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        nickname:
+          type: string
+        password:
+          type: string
+          format: password
+        role:
+          type: string
+          enum: [player, manager]
+      required:
+        - email
+        - nickname
+        - password
+        - role
+      additionalProperties: false
+    LfgCreate:
+      description: Schema for creating an LFG post with conditional validation for teamId.
+      oneOf:
+        - type: object
+          title: Player LFG
+          properties:
+            type:
+              type: string
+              enum: [player]
+            sportId:
+              type: string
+              example: sport-1
+            requiredRole:
+              type: string
+            message:
+              type: string
+          required:
+            - type
+            - sportId
+            - requiredRole
+            - message
+          additionalProperties: false
+        - type: object
+          title: Team LFG
+          properties:
+            type:
+              type: string
+              enum: [team]
+            sportId:
+              type: string
+              example: sport-2
+            teamId:
+              type: string
+              format: uuid
+            requiredRole:
+              type: string
+            message:
+              type: string
+          required:
+            - type
+            - sportId
+            - teamId
+            - requiredRole
+            - message
+          additionalProperties: false
+      additionalProperties: false
+    PostCreate:
+      type: object
+      properties:
+        content:
+          type: string
+          example: This is a new post!
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The ID of the team to associate the post with (optional).
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - content
+      additionalProperties: false
+    SportCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Basketball
+        isTeamSport:
+          type: boolean
+          example: true
+      required:
+        - name
+        - isTeamSport
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 100
+        pages:
+          type: integer
+          example: 10
+      required:
+        - page
+        - per_page
+        - total
+        - pages
+    Error:
+      type: object
+      description: RFC7807-compliant error response.
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type.
+          example: about:blank
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type.
+          example: Bad Request
+        status:
+          type: integer
+          description: The HTTP status code.
+          example: 400
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+          example: "Validation failed: 'email' is required."
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of the problem.
+          example: /api/v1/auth/register
+      required:
+        - title
+        - status
+x-changelog:
+  - 'feat: Added `operationId` to all API operations for client generation.'
+  - 'feat: Implemented conditional validation for `LfgCreate` using `oneOf` (teamId

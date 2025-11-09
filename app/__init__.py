@@ -56,18 +56,19 @@ def create_app(init_swagger=True):
         }
         swagger = Swagger(app, config=swagger_config)
 
-
     @app.route('/')
     def index():
         return redirect('/apidocs/')
 
-    # --- Инициализация расширений в приложении ---
+    # --- Инициализация расширений и обработчиков ошибок ---
+    from . import errors
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     cors.init_app(app, resources={r"/api/v1/*": {"origins": "*"}})
     jwt.init_app(app)
     s3_service.init_app(app)
+    errors.init_app(app) # Регистрация обработчика ошибок
 
     with app.app_context():
         # Импортируем модели

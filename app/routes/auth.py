@@ -1,4 +1,5 @@
-from flask import request, jsonify, Blueprint
+
+from flask import request, jsonify, Blueprint, abort
 from app import db, bcrypt
 from app.models import User, PlayerProfile, RefereeProfile, CoachProfile, UserSession
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
@@ -20,40 +21,7 @@ def register():
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - email
-              - nickname
-              - password
-            properties:
-              email:
-                type: string
-                example: "user@example.com"
-              nickname:
-                type: string
-                example: "new_user_123"
-              password:
-                type: string
-                example: "strongpassword"
-              role:
-                type: string
-                enum: ['player', 'referee', 'coach']
-                default: 'player'
-              city:
-                type: string
-                example: "Moscow"
-              firstName:
-                type: string
-                example: "Ivan"
-              lastName:
-                type: string
-                example: "Ivanov"
-              age:
-                type: integer
-                example: 25
-              gender:
-                type: string
-                enum: ['male', 'female']
+            $ref: '#/components/schemas/UserRegistration'
     responses:
       201:
         description: User created successfully.
@@ -68,7 +36,7 @@ def register():
     role = data.get('role', 'player') # По умолчанию роль - player
 
     if User.query.filter_by(email=email).first() or User.query.filter_by(nickname=nickname).first():
-        return jsonify({"error": "Пользователь с таким email или никнеймом уже существует"}), 409
+        abort(409, description="Пользователь с таким email или никнеймом уже существует")
 
     password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
@@ -112,17 +80,7 @@ def login():
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - email
-              - password
-            properties:
-              email:
-                type: string
-                example: "user@example.com"
-              password:
-                type: string
-                example: "strongpassword"
+            $ref: '#/components/schemas/UserLogin'
     responses:
       200:
         description: Login successful.
@@ -136,11 +94,9 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if user and bcrypt.check_password_hash(user.password_hash, password):
-        # Создаем токены
         access_token = create_access_token(identity=str(user.id))
         refresh_token = create_refresh_token(identity=str(user.id))
 
-        # Сохраняем сессию в БД
         new_session = UserSession(
             userId=user.id,
             refreshToken=refresh_token,
@@ -156,7 +112,7 @@ def login():
             "user": user.to_dict(include_teams=True, include_sports=True)
         })
     
-    return jsonify({"error": "Неверные учетные данные"}), 401
+    abort(401, description="Неверные учетные данные")
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
@@ -167,24 +123,21 @@ def refresh():
     tags:
       - Auth
     summary: Get a new access token
-    description: Uses a valid refresh token to get a new access token. The refresh token must be sent in the Authorization header.
+    description: Uses a valid refresh token to get a new access token.
     security:
       - bearerAuth: []
     responses:
       200:
         description: Access token refreshed successfully.
       401:
-        description: Unauthorized (invalid or expired refresh token).
+        description: Unauthorized.
     """
     current_user_id = get_jwt_identity()
-    jti = get_jwt()['jti'] # Уникальный идентификатор JWT
-    
     new_access_token = create_access_token(identity=current_user_id)
-    
     return jsonify(accessToken=new_access_token)
 
 @auth_bp.route('/logout', methods=['POST'])
-@jwt_required(refresh=True) # Требуем refresh токен для выхода
+@jwt_required(refresh=True)
 def logout():
     """
     Log out a user
@@ -206,18 +159,13 @@ def logout():
             properties:
               refreshToken:
                 type: string
-                description: The refresh token to invalidate.
     responses:
       200:
         description: Logout successful.
       401:
         description: Unauthorized.
     """
-    jti = get_jwt()['jti']
-    current_user_id = get_jwt_identity()
-    
     token = request.get_json().get('refreshToken')
-    
     session = UserSession.query.filter_by(refreshToken=token).first()
     if session:
         db.session.delete(session)

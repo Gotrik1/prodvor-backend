@@ -1,8 +1,10 @@
 
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from app import db
 from app.models import Post
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from ..utils.decorators import jwt_required
+from app.routes.users import serialize_pagination
 
 posts_bp = Blueprint('posts', __name__)
 
@@ -14,17 +16,44 @@ def get_posts():
     tags:
       - Posts
     summary: Get all posts
-    description: Retrieves a list of all posts in descending order of creation time.
+    description: Retrieves a paginated list of all posts in descending order of creation time.
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+        description: The page number to retrieve.
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 10
+        description: The number of posts to retrieve per page.
     responses:
       200:
-        description: A list of posts.
+        description: A paginated list of posts.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Post'
+                meta:
+                  $ref: '#/components/schemas/Pagination'
     """
-    posts = Post.query.order_by(Post.timestamp.desc()).all()
-    return jsonify([p.to_dict() for p in posts])
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    posts_pagination = Post.query.order_by(Post.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify(serialize_pagination(posts_pagination, 'data', lambda p: p.to_dict()))
 
 @posts_bp.route('/posts', methods=['POST'])
-@jwt_required()
-def create_post():
+@jwt_required
+def create_post(current_user):
     """
     Create a new post
     ---
@@ -57,12 +86,10 @@ def create_post():
     """
     data = request.get_json()
     if not data or not data.get('content'):
-        return jsonify({"error": "Missing content"}), 400
+        abort(400, description="Missing content")
 
-    current_user_id = get_jwt_identity()
-    
     new_post = Post(
-        authorId=current_user_id,
+        authorId=current_user.id,
         content=data['content'],
         teamId=data.get('teamId')
     )

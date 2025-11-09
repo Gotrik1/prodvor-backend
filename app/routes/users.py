@@ -1,5 +1,5 @@
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, abort
 from uuid import UUID
 from ..models import db, User, FriendRequest, Team, UserSettings, UserPrivacySettings
 from ..utils.decorators import jwt_required
@@ -71,7 +71,7 @@ def get_user(current_user, user_id):
     try:
         user_uuid = UUID(user_id, version=4)
     except ValueError:
-        return jsonify({"error": "Invalid UUID format"}), 400
+        abort(400, description="Invalid UUID format")
 
     user = User.query.get_or_404(user_uuid)
     profile_buttons = get_profile_buttons(current_user.id, user)
@@ -98,5 +98,3 @@ def get_me(current_user):
     user = User.query.get_or_404(current_user.id)
     profile_buttons = get_profile_buttons(current_user.id, user)
     return jsonify(user.to_dict(include_teams=True, profile_buttons=profile_buttons, include_settings=True))
-
-# ... (остальные эндпоинты без изменений) ...
