@@ -16,7 +16,7 @@
     pkgs.python3
     pkgs.lsof
     pkgs.postgresql
-        
+    pkgs.redocly    
   ];
 
   # Глобальные переменные окружения
