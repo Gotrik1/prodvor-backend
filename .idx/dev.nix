@@ -16,8 +16,7 @@
     pkgs.python3
     pkgs.lsof
     pkgs.postgresql
-    
-    
+        
   ];
 
   # Глобальные переменные окружения
