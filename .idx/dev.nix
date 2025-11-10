@@ -11,7 +11,6 @@
     pkgs.openssh
     pkgs.docker_27
     pkgs.docker-compose
-    pkgs.entr
     pkgs.python3
     pkgs.lsof
     pkgs.postgresql
