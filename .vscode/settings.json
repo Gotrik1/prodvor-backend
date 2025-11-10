@@ -1,14 +1,35 @@
 {
-    "achilleshr.runonsave": {
-      "autoClearConsole": false,
-      "message": "▶ Run On Save: autopush",
-      "commands": [
-        {
-          "match": ".*",
-          "notMatch": "(^|/)(\\.git|node_modules|\\.vscode|dist|build)/.*$",
-          "cmd": "bash -lc \"cd '${workspaceFolder}' && BR=$(git rev-parse --abbrev-ref HEAD) && git add . && (git diff --cached --quiet && echo 'No changes to commit' || (git commit -m 'auto: ${fileBasename} saved at $(date -u +%Y-%m-%dT%H:%M:%SZ)' && git push origin $BR))\""
-        }
-      ]
-    }
-  }
-  
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "achilleshr.runonsave": {
+    "autoClearConsole": false,
+    "commands": [
+      {
+        "cmd": "bash -lc \"cd '${workspaceFolder}' \u0026\u0026 BR=$(git rev-parse --abbrev-ref HEAD) \u0026\u0026 git add . \u0026\u0026 (git diff --cached --quiet \u0026\u0026 echo 'No changes to commit' || (git commit -m 'auto: ${fileBasename} saved at $(date -u +%Y-%m-%dT%H:%M:%SZ)' \u0026\u0026 git push origin $BR))\"",
+        "match": ".*",
+        "notMatch": "(^|/)(\\.git|node_modules|\\.vscode|dist|build)/.*$"
+      }
+    ],
+    "message": "▶ Run On Save: autopush"
+  },
+  "deno.enablePaths": [
+    "supabase/functions"
+  ],
+  "deno.lint": true,
+  "deno.unstable": [
+    "bare-node-builtins",
+    "byonm",
+    "sloppy-imports",
+    "unsafe-proto",
+    "webgpu",
+    "broadcast-channel",
+    "worker-options",
+    "cron",
+    "kv",
+    "ffi",
+    "fs",
+    "http",
+    "net"
+  ]
+}

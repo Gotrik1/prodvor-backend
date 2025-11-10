@@ -1,21 +1,34 @@
+# Core Framework
 fastapi==0.111.1
-python-dotenv==1.0.1
-passlib[bcrypt]==1.7.4
-astapi
+uvicorn[standard]==0.30.3
+gunicorn==22.0.0
 
-uvicorn[standard]
-sqlalchemy>=2
-alembic
-pydantic[email] 
-pydantic-settings
-python-jose[cryptography] 
-python-multipart 
-redis 
-fastapi-limiter
-structlog
-boto3 
-orjson
-gunicorn 
-psycopg2-binary 
-sentry-sdk[fastapi]
-prometheus-fastapi-instrumentator 
+# Database & Migrations
+sqlalchemy==2.0.32
+alembic==1.13.2
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+redis==5.0.7
+
+# Config & Schemas
+pydantic[email]==2.8.2
+pydantic-settings==2.4.0
+python-dotenv==1.0.1
+orjson==3.10.6
+
+# Security & Auth
+passlib==1.7.4
+bcrypt==3.2.0
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
+
+# API Features & Tooling
+fastapi-limiter==0.1.6
+
+# Observability & Logging
+structlog==24.2.0
+sentry-sdk[fastapi]==2.11.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# AWS
+boto3==1.34.144
