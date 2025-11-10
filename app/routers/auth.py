@@ -1,30 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.crud import user as user_crud
-from app import schemas # schemas все еще нужны для валидации запроса и формата ответа
-from app.core.security import create_access_token, verify_password
 from app.dependencies import get_db
+from app.schemas.auth import LoginRequest, Token
+from app.core.security import verify_password, create_access_token
+from app import crud as _crud
 
 router = APIRouter()
 
-@router.post("/login", response_model=schemas.Token)
-def login(db: Session = Depends(get_db), *, obj_in: schemas.LoginRequest):
-    db_user = user_crud.get_by_email(db, email=obj_in.email)
+@router.post("/login", response_model=Token)
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    # не называем переменную 'user', чтобы не тень CRUДа
+    u = _crud.user.get_by_email(db, email=payload.email)
+    if not u:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Incorrect email or password")
 
-    # Важно: db_user теперь RowProxy (как dict), а не ORM-объект.
-    # Обращаемся к полям по именам колонок из legacy-схемы.
-    if not db_user or not verify_password(obj_in.password, db_user['password_hash']):
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    # имя поля как в твоей БД (во Flask было password_hash)
+    hashed = u.get("password_hash")
+    if not hashed or not verify_password(payload.password, hashed):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Incorrect email or password")
 
-    # Передаем identity напрямую в функцию создания токена.
-    # Поле id берется из отраженной таблицы.
-    access_token = create_access_token(
-        identity=str(db_user['id'])
-    )
-
-    return {
-        "access_token": access_token,
-        "refresh_token": "dummy_refresh_token", # Заглушка, как и договорились
-        "token_type": "bearer",
-    }
+    # payload как во Flask-JWT-Extended: identity → sub
+    access_token = create_access_token({"identity": str(u["id"]), "sub": str(u["id"])})
+    # refresh позже; сейчас заглушка
+    return {"access_token": access_token, "refresh_token": "", "token_type": "bearer"}
