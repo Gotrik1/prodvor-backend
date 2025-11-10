@@ -22,6 +22,6 @@ structlog
 boto3 # S3/MinIO через endpoint_url
 orjson
 gunicorn # прод-старт ASGI через uvicorn воркер
-psycopg2-binary # dev; для prod можно перейти на psycopg[binary]
+psycopg2-binary 
 sentry-sdk[fastapi]
 prometheus-fastapi-instrumentator 
