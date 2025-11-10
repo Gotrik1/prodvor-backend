@@ -19,7 +19,7 @@ python-multipart # формы/файлы
 redis # клиент для limiter
 fastapi-limiter
 structlog
-boto3 # S3/MinIO через endpoint_url
+boto3 
 orjson
 gunicorn 
 psycopg2-binary 
