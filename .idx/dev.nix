@@ -59,7 +59,7 @@
               # 3. Активируем venv и запускаем FastAPI с Uvicorn.
               source .venv/bin/activate
               echo "Запускаем FastAPI-сервер с Uvicorn..."
-              exec uvicorn app.main:app --host=0.0.0.0 --port=8080 --reload
+              exec uvicorn app.main:app --host=0.0.0.0 --port=8000 --reload
             ''
           ];
           manager = "web";
