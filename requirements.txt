@@ -16,7 +16,7 @@ pydantic-settings
 python-jose[cryptography] # JWT
 passlib[bcrypt] # хеш паролей; Argon2 можно добавить позже (argon2-cffi)
 python-multipart # формы/файлы
-redis # клиент для limiter
+redis 
 fastapi-limiter
 structlog
 boto3 
