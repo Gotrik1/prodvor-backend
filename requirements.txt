@@ -9,25 +9,15 @@ python-jose[cryptography]==3.3.0
 astapi
 
 uvicorn[standard]
-
 sqlalchemy>=2
-
 alembic
-
 pydantic[email] # подтянет email-validator
-
 pydantic-settings
-
 python-jose[cryptography] # JWT
-
 passlib[bcrypt] # хеш паролей; Argon2 можно добавить позже (argon2-cffi)
-
 python-multipart # формы/файлы
-
 redis # клиент для limiter
-
 fastapi-limiter
-
 structlog
 
 boto3 # S3/MinIO через endpoint_url
