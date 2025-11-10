@@ -1,10 +1,11 @@
+
 # app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ✔ Импорты почищены
 from app.core.config import settings
-from app.routers import auth, users
+from app.routers import auth, users, sports
 
 # ✔ Убрана строка Base.metadata.create_all(bind=engine)
 
@@ -22,6 +23,7 @@ app.add_middleware(
 # Подключение роутеров
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(sports.router, prefix="/api/v1/sports", tags=["sports"])
 
 @app.get("/")
 def read_root():

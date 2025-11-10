@@ -54,3 +54,16 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+# Новые схемы для кнопок профиля
+class ProfileButtonAction(BaseModel):
+    type: str
+    status: Optional[str] = None
+
+class ProfileButton(BaseModel):
+    action: ProfileButtonAction
+    text: str
+
+# Новая схема ответа для профиля пользователя
+class UserProfile(User):
+    profile_buttons: List[ProfileButton] = []

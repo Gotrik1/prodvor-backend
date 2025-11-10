@@ -1,0 +1,616 @@
+{
+  "definitions": {},
+  "info": {
+    "description": "A RESTful API for a sports team and player matching platform.",
+    "title": "Sport Matching API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticates a user with email and password, returning access and refresh tokens.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful."
+          },
+          "401": {
+            "description": "Invalid credentials."
+          }
+        },
+        "summary": "Log in a user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Logs the user out by deleting their session based on the provided refresh token.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "refreshToken"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Logout successful."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Log out a user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Uses a valid refresh token to get a new access token.",
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Refresh access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Creates a new user with the given email, nickname, password, and role.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully."
+          },
+          "409": {
+            "description": "User with this email or nickname already exists."
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/lfg": {
+      "get": {
+        "description": "Retrieves a list of all LFG posts, with optional query parameters for filtering.",
+        "parameters": [
+          {
+            "description": "Filter by post type (player looking for team, or team looking for player).",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "enum": [
+                "player",
+                "team"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by sport ID.",
+            "in": "query",
+            "name": "sportId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by required player role (e.g., 'goalkeeper').",
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of LFG posts."
+          }
+        },
+        "summary": "Get all LFG posts with optional filters",
+        "tags": [
+          "LFG (Looking for Group)"
+        ]
+      },
+      "post": {
+        "description": "Creates a new LFG post. User must be authenticated. If the post type is 'team', the user must be the captain of the specified team.\n",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "message": {
+                    "description": "A message for the post.",
+                    "example": "Looking for a team for the weekend tournament.",
+                    "type": "string"
+                  },
+                  "requiredRole": {
+                    "description": "The role required (e.g., 'forward', 'defender').",
+                    "example": "Goalkeeper",
+                    "type": "string"
+                  },
+                  "sportId": {
+                    "description": "The ID of the sport.",
+                    "type": "string"
+                  },
+                  "teamId": {
+                    "description": "The ID of the team (required if type is 'team').",
+                    "type": "integer"
+                  },
+                  "type": {
+                    "description": "The type of LFG post.",
+                    "enum": [
+                      "player",
+                      "team"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "sportId",
+                  "requiredRole",
+                  "message"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "LFG post created successfully."
+          },
+          "400": {
+            "description": "Bad request (missing fields or invalid type)."
+          },
+          "403": {
+            "description": "Forbidden (user is not the captain of the team)."
+          },
+          "404": {
+            "description": "Not found (sport or team not found)."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new LFG post",
+        "tags": [
+          "LFG (Looking for Group)"
+        ]
+      }
+    },
+    "/api/v1/playgrounds/playgrounds": {
+      "get": {
+        "description": "Retrieves a paginated list of all available playgrounds.",
+        "parameters": [
+          {
+            "description": "The page number to retrieve.",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of playgrounds to retrieve per page.",
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Playground"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A paginated list of playgrounds."
+          }
+        },
+        "summary": "Get all playgrounds",
+        "tags": [
+          "Playgrounds"
+        ]
+      },
+      "post": {
+        "description": "Creates a new playground. Requires authentication.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Playground"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Playground created successfully."
+          },
+          "400": {
+            "description": "Bad request (missing required fields)."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new playground",
+        "tags": [
+          "Playgrounds"
+        ]
+      }
+    },
+    "/api/v1/posts/posts": {
+      "get": {
+        "description": "Retrieves a paginated list of all posts in descending order of creation time.",
+        "parameters": [
+          {
+            "description": "The page number to retrieve.",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of posts to retrieve per page.",
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Post"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A paginated list of posts."
+          }
+        },
+        "summary": "Get all posts",
+        "tags": [
+          "Posts"
+        ]
+      },
+      "post": {
+        "description": "Creates a new post. The author ID is taken from the authentication token.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "content": {
+                    "example": "This is a new post!",
+                    "type": "string"
+                  },
+                  "teamId": {
+                    "description": "The ID of the team to associate the post with (optional).",
+                    "example": "123e4567-e89b-12d3-a456-426614174000",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Post created successfully."
+          },
+          "400": {
+            "description": "Bad request (missing content)."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new post",
+        "tags": [
+          "Posts"
+        ]
+      }
+    },
+    "/api/v1/sponsors/sponsors": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Sponsor"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A paginated list of sponsors."
+          }
+        },
+        "summary": "Get all sponsors",
+        "tags": [
+          "Sponsors"
+        ]
+      }
+    },
+    "/api/v1/sports/sports": {
+      "post": {
+        "description": "Creates a new sport.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Sport created successfully."
+          },
+          "400": {
+            "description": "Bad request (missing fields or sport with this name already exists)."
+          }
+        },
+        "summary": "Create a new sport",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/sports/sports/": {
+      "get": {
+        "description": "Retrieves a paginated list of all available sports.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Sport"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A paginated list of sports."
+          }
+        },
+        "summary": "Get all sports",
+        "tags": [
+          "Sports"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Retrieves the complete profile information for the currently authenticated user, including teams and settings.",
+        "responses": {
+          "200": {
+            "description": "User profile data successfully retrieved."
+          },
+          "401": {
+            "description": "Unauthorized. JWT is missing or invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get current user's profile",
+        "tags": [
+          "User Profile"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "description": "Retrieves public profile information for a specific user, along with context-aware action buttons (e.g., 'Add Friend').",
+        "parameters": [
+          {
+            "description": "The UUID of the user to retrieve.",
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile data retrieved successfully."
+          },
+          "400": {
+            "description": "Invalid UUID format."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get user profile by ID",
+        "tags": [
+          "User Profile"
+        ]
+      }
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0"
+}

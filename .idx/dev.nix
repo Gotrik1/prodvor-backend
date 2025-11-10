@@ -17,6 +17,8 @@
     pkgs.lsof
     pkgs.postgresql
     pkgs.redocly
+    pkgs.supabase-cli
+
   ];
 
   # Глобальные переменные окружения
