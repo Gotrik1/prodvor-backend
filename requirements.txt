@@ -21,7 +21,7 @@ fastapi-limiter
 structlog
 boto3 # S3/MinIO через endpoint_url
 orjson
-gunicorn # прод-старт ASGI через uvicorn воркер
+gunicorn 
 psycopg2-binary 
 sentry-sdk[fastapi]
 prometheus-fastapi-instrumentator 
