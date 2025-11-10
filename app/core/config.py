@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    PROJECT_NAME: str = "Prodvor API"
     DATABASE_URL: str
     SECRET_KEY: str
     JWT_SECRET_KEY: str

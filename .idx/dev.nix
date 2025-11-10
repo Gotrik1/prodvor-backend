@@ -11,7 +11,6 @@
     pkgs.openssh
     pkgs.docker_27
     pkgs.docker-compose
-    pkgs.inotify-tools
     pkgs.entr
     pkgs.python3
     pkgs.lsof
@@ -38,12 +37,12 @@
       enable = true;
       previews = {
         web = {
-          # Запускаем Docker Compose, а затем Flask
+          # Запускаем Docker Compose, а затем FastAPI
           command = [ 
             "bash" 
             "-c" 
             # Используем '' для многострочного скрипта в Nix
-            ''
+            '''
               # 0. Ждем, пока Docker-демон запустится.
               echo "Waiting for Docker daemon to start..."
               while ! docker info > /dev/null 2>&1; do
@@ -57,14 +56,13 @@
 
               # 2. Устанавливаем DATABASE_URL для подключения к БД в Docker.
               #    Используем учетные данные из docker-compose.yml (prodvor:prodvor@localhost:5432/prodvor)
-              export DATABASE_URL='postgresql://prodvor:prodvor@localhost:5432/prodvor'
+              export DATABASE_URL="postgresql://prodvor:prodvor@localhost:5432/prodvor"
 
-              # 3. Активируем venv, указываем приложение и запускаем Flask.
+              # 3. Активируем venv и запускаем FastAPI с Uvicorn.
               source .venv/bin/activate
-              export FLASK_APP=main.py
-              echo 'Запускаем Flask-сервер...'
-              exec flask run --host=0.0.0.0 --port=8080
-            ''
+              echo "Запускаем FastAPI-сервер с Uvicorn..."
+              exec uvicorn app.main:app --host=0.0.0.0 --port=8080 --reload
+            '''
           ];
           manager = "web";
         };
