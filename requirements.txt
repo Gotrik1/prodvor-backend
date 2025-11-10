@@ -11,7 +11,7 @@ astapi
 uvicorn[standard]
 sqlalchemy>=2
 alembic
-pydantic[email] # подтянет email-validator
+pydantic[email] 
 pydantic-settings
 python-jose[cryptography] 
 python-multipart 
