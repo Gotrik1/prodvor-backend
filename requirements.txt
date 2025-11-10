@@ -14,7 +14,7 @@ alembic
 pydantic[email] # подтянет email-validator
 pydantic-settings
 python-jose[cryptography] # JWT
-passlib[bcrypt] # хеш паролей; Argon2 можно добавить позже (argon2-cffi)
+passlib[bcrypt] 
 python-multipart 
 redis 
 fastapi-limiter
