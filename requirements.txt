@@ -1,27 +1,18 @@
-# Core Flask & API
-APIFlask
-Flask-SQLAlchemy
-Flask-Migrate
-Flask-Cors
-Flask-Bcrypt
-Flask-JWT-Extended
+fastapi
+uvicorn[standard]
+sqlalchemy>=2
 alembic
-
-# Database
-psycopg2-binary
-
-# S3 Storage
-minio
-
-# Utilities
-python-dotenv
-marshmallow
-
-# Production Server
+pydantic[email]
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+redis
+fastapi-limiter
+structlog
+boto3
+orjson
 gunicorn
-
-# Production Goodies
-flask-limiter
-sentry-sdk[flask]
-prometheus-flask-exporter
-argon2-cffi
+psycopg2-binary
+sentry-sdk[fastapi]
+prometheus-fastapi-instrumentator
