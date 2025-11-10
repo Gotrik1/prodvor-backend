@@ -3,4 +3,15 @@ from .user import User
 from .player_profile import PlayerProfile
 from .referee_profile import RefereeProfile
 from .coach_profile import CoachProfile
-from .user_session import UserSession
+from .session import Session
+from .team import Team
+from .sport import Sport
+from .event import Event
+from .user_event import UserEvent
+from .user_team import UserTeam
+from .sport_event import SportEvent
+from .team_event import TeamEvent
+from .user_favorite_sport import UserFavoriteSport
+from .notification import Notification
+from .subscription import Subscription
+from .friend_request import FriendRequest

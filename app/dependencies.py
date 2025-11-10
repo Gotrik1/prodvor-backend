@@ -1,47 +1,34 @@
-
-from typing import Generator
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
 
-from app.models import User
-
-from app.schemas.auth import TokenPayload
-from app.core.config import settings
 from app.db.session import SessionLocal
+from app.core.config import settings
+from app.crud import crud_user
+from app.schemas.token import TokenData
 
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/api/v1/login/access-token")
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"/api/v1/auth/login"
-)
-
-def get_db() -> Generator:
+def get_db():
+    db = SessionLocal()
     try:
-        db = SessionLocal()
         yield db
     finally:
         db.close()
 
-def get_current_user(
-    db: Session = Depends(get_db),
-    token: str = Depends(reusable_oauth2)
-) -> User:
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)):
     try:
         payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        token_data = TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
+        token_data = TokenData(**payload)
+    except (JWTError, ValueError):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    user = db.query(User).get(token_data.sub)
+    user = crud_user.get(db, id=token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

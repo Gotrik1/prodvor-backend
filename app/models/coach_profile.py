@@ -6,4 +6,4 @@ from app.db.base_class import Base
 class CoachProfile(Base):
     __tablename__ = "coach_profile"
 
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)

@@ -1,69 +1,33 @@
-from pydantic import BaseModel, EmailStr, UUID4
-from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+import uuid
 
-class PlayerProfileBase(BaseModel):
-    matchesPlayed: int = 0
-    wins: int = 0
-    goals: int = 0
-    assists: int = 0
-    mvpAwards: int = 0
-    elo: int = 1200
-
-class PlayerProfile(PlayerProfileBase):
-    pass
-
-class RefereeProfileBase(BaseModel):
-    category: Optional[str] = None
-    matchesJudged: int = 0
-
-class RefereeProfile(RefereeProfileBase):
-    pass
-
-class CoachProfileBase(BaseModel):
-    specialization: Optional[str] = None
-    experienceYears: Optional[int] = None
-
-class CoachProfile(CoachProfileBase):
-    pass
-
+# Shared properties
 class UserBase(BaseModel):
-    email: EmailStr
-    nickname: str
+    email: Optional[EmailStr] = None
+    nickname: Optional[str] = None
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    birthDate: Optional[datetime] = None
-    avatarUrl: Optional[str] = None
-    coverImageUrl: Optional[str] = None
-    role: str
-    city: Optional[str] = None
-    age: Optional[int] = None
-    gender: Optional[str] = None
-    phone: Optional[str] = None
-    bio: Optional[str] = None
-    elo: int = 1200
 
+# Properties to receive via API on creation
 class UserCreate(UserBase):
+    email: EmailStr
     password: str
 
-class User(UserBase):
-    id: UUID4
-    player_profile: Optional[PlayerProfile] = None
-    referee_profile: Optional[RefereeProfile] = None
-    coach_profile: Optional[CoachProfile] = None
+# Properties to receive via API on update
+class UserUpdate(UserBase):
+    password: Optional[str] = None
+
+class UserInDBBase(UserBase):
+    id: uuid.UUID
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
-# Новые схемы для кнопок профиля
-class ProfileButtonAction(BaseModel):
-    type: str
-    status: Optional[str] = None
+# Additional properties to return via API
+class User(UserInDBBase):
+    pass
 
-class ProfileButton(BaseModel):
-    action: ProfileButtonAction
-    text: str
-
-# Новая схема ответа для профиля пользователя
-class UserProfile(User):
-    profile_buttons: List[ProfileButton] = []
+# Additional properties stored in DB
+class UserInDB(UserInDBBase):
+    hashed_password: str

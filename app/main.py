@@ -3,11 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ✔ Импорты почищены
 from app.core.config import settings
-from app.routers import auth, users, sports
-
-# ✔ Убрана строка Base.metadata.create_all(bind=engine)
+from app.api.api_v1.api import api_router
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -21,9 +18,7 @@ app.add_middleware(
 )
 
 # Подключение роутеров
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-app.include_router(sports.router, prefix="/api/v1/sports", tags=["sports"])
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():

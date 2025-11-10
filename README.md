@@ -1,241 +1,109 @@
+# ProDvor Backend
 
-# План миграции бэкенда на Python (Flask) для проекта ProDvor
+This is the backend for the ProDvor project, a platform for sports enthusiasts. It is built with Python and the FastAPI framework, providing a robust and scalable API for the frontend application.
 
-Этот документ содержит полный план и серию промптов для создания Python-бэкенда, который будет полностью совместим с существующим фронтендом ProDvor.
+## Tech Stack
 
-**Стратегия:** Мы будем использовать фреймворк Flask с SQLAlchemy для работы с базой данных PostgreSQL. Каждый промпт ниже представляет собой законченный шаг, который можно последовательно отправлять AI-ассистенту в новом проекте Firebase Studio, созданном на основе шаблона "Python (Flask)".
+*   **Framework**: FastAPI
+*   **Database**: PostgreSQL with SQLAlchemy ORM
+*   **Asynchronous Server Gateway Interface (ASGI)**: Uvicorn
+*   **Web Server Gateway Interface (WSGI) HTTP Server**: Gunicorn
+*   **Containerization**: Docker
+*   **Dependency Management**: pip and `requirements.txt`
+*   **Code Quality**: `structlog` for structured logging.
 
----
+## Project Structure
 
-## Шаг 1: Настройка проекта и создание всех моделей данных
+```
+├── app/
+│   ├── core/
+│   │   ├── config.py       # Pydantic settings management
+│   │   ├── logging.py      # Logging configuration
+│   │   └── security.py     # Password hashing and token generation
+│   ├── crud/             # Create, Read, Update, Delete database operations
+│   ├── models/           # SQLAlchemy database models
+│   ├── schemas/          # Pydantic data validation schemas
+│   ├── routers/          # API endpoint definitions (auth, users, etc.)
+│   └── dependencies.py   # FastAPI dependencies
+├── .github/workflows/
+│   └── ci.yml            # GitHub Actions CI configuration
+├── .env.example          # Example environment variables
+├── main.py               # Main FastAPI application entrypoint
+├── Dockerfile            # Docker configuration for production
+├── gunicorn.conf.py      # Gunicorn server configuration
+└── requirements.txt      # Python dependencies
+```
 
-**Промпт 1:**
+## Getting Started
 
-"Привет! Давай создадим основу нашего Flask-приложения для работы с PostgreSQL. Нам нужно:
-1.  Убедиться, что в `requirements.txt` добавлены `Flask-SQLAlchemy`, `psycopg2-binary` и `Flask-Cors`.
-2.  Инициализировать Flask-приложение.
-3.  Настроить SQLAlchemy для работы с базой данных PostgreSQL. Используй стандартную строку подключения, например: `postgresql://user:password@host:port/database`. Не забудь также инициализировать `CORS`.
-4.  Создать модели данных (SQLAlchemy models) для всех сущностей проекта.
+### Prerequisites
 
-Вот структура моделей:
+*   Python 3.11+
+*   Docker and Docker Compose
+*   An accessible PostgreSQL database
 
--   **User**:
-    -   `id`: `Integer`, первичный ключ
-    -   `nickname`: `String(80)`, уникальный, не может быть null
-    -   `email`: `String(120)`, уникальный, не может быть null
-    -   `avatarUrl`: `String(200)`
-    -   `role`: `String(50)`, не может быть null
-    -   `city`: `String(100)`
-    -   `elo`: `Integer`, по умолчанию `1200`
-    -   Отношение к `PlayerProfile`, `RefereeProfile`, `CoachProfile`, `Post`.
+### Installation & Setup
 
--   **Team**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(120)`, не может быть null
-    -   `logoUrl`: `String(200)`
-    -   `captainId`: `Integer`, внешний ключ к `user.id`
-    -   `game`: `String(100)`
-    -   `rank`: `Integer`, по умолчанию `1200`
-    -   `city`: `String(100)`
-    -   Отношение к `Post`.
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd <repository-name>
+    ```
 
--   **PlayerProfile**:
-    -   `id`: `Integer`, первичный ключ
-    -   `userId`: `Integer`, внешний ключ к `user.id`, уникальный
-    -   `elo`: `Integer`, по умолчанию `1000`
-    -   `matchesPlayed`: `Integer`, по умолчанию `0`
-    -   `wins`: `Integer`, по умолчанию `0`
+2.  **Create and activate a virtual environment:**
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
 
--   **RefereeProfile**:
-    -   `id`: `Integer`, первичный ключ
-    -   `userId`: `Integer`, внешний ключ к `user.id`, уникальный
-    -   `category`: `String(50)`
-    -   `matchesJudged`: `Integer`, по умолчанию `0`
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
--   **CoachProfile**:
-    -   `id`: `Integer`, первичный ключ
-    -   `userId`: `Integer`, внешний ключ к `user.id`, уникальный
-    -   `specialization`: `String(150)`
-    -   `experienceYears`: `Integer`
-    
--   **Tournament**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(150)`, не может быть null
-    -   `game`: `String(100)`
-    -   `status`: `String(50)`
-    -   `prizePool`: `String(100)`
-    -   `participants`: `Integer`, по умолчанию `0`
-    -   `maxParticipants`: `Integer`
-    -   `startDate`: `String(100)`
-    
--   **Post**:
-    -   `id`: `Integer`, первичный ключ
-    -   `authorId`: `Integer`, внешний ключ к `user.id`
-    -   `teamId`: `Integer`, внешний ключ к `team.id` (может быть null)
-    -   `content`: `Text`
-    -   `timestamp`: `DateTime`, по умолчанию `func.now()`
-    -   Отношение к `Comment`.
+4.  **Configure environment variables:**
+    Create a `.env` file in the project root by copying the example file, and fill in the required values (especially for the database connection).
+    ```bash
+    cp .env.example .env
+    # Now edit .env with your configuration
+    ```
 
--   **Comment**:
-    -   `id`: `Integer`, первичный ключ
-    -   `postId`: `Integer`, внешний ключ к `post.id`
-    -   `authorId`: `Integer`, внешний ключ к `user.id`
-    -   `text`: `Text`
-    -   `timestamp`: `DateTime`, по умолчанию `func.now()`
+### Running the Application
 
--   **Playground**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(150)`
-    -   `address`: `String(250)`
-    -   `type`: `String(100)`
-    -   `surface`: `String(100)`
-    
--   **Quest**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(150)`
-    -   `description`: `Text`
-    -   `type`: `String(50)`
-    -   `xp_reward`: `Integer`
-    
--   **Achievement**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(150)`
-    -   `description`: `Text`
-    -   `icon`: `String(50)`
+**For Development:**
 
--   **Sponsor**:
-    -   `id`: `Integer`, первичный ключ
-    -   `name`: `String(150)`
-    -   `logoUrl`: `String(200)`
-    -   `contribution`: `String(200)`
+Run the application using Uvicorn. The `--reload` flag will automatically restart the server on code changes.
 
--   **TeamMembers** (связующая таблица для User и Team):
-    -   `userId`: `Integer`, внешний ключ к `user.id`, первичный ключ
-    -   `teamId`: `Integer`, внешний ключ к `team.id`, первичный ключ
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
--   **TeamFollowers** (связующая таблица для подписок на команды):
-    -   `userId`: `Integer`, внешний ключ к `user.id`, первичный ключ
-    -   `teamId`: `Integer`, внешний ключ к `team.id`, первичный ключ
+The API will be available at `http://localhost:8000`.
 
-Пожалуйста, создай файл `app.py` со всем этим кодом и инициализируй базу данных."
+**For Production (with Docker):**
 
----
+1.  **Build the Docker image:**
+    ```bash
+    docker build -t prodvor-backend .
+    ```
 
-## Шаг 2: Создание API для Пользователей (Users)
+2.  **Run the container:**
+    Make sure your `.env` file is present and configured.
+    ```bash
+    docker run -p 8000:8000 --env-file .env prodvor-backend
+    ```
 
-**Промпт 2:**
+## API Endpoints
 
-"Отлично! Теперь давай создадим API для работы с пользователями в файле `app.py`. Нам нужны следующие эндпоинты:
+The API is structured using FastAPI routers. The main endpoints are:
 
-1.  **`GET /api/v1/users`**:
-    -   Должен возвращать список всех пользователей.
-    -   Каждый объект в списке должен содержать все поля из модели `User`.
+*   `/api/v1/auth/`: User registration, login, logout, and token refresh.
+*   `/api/v1/users/`: User management.
+*   `/api/v1/subscriptions/`: Subscription management.
+*   `/healthz`: Health check endpoint.
 
-2.  **`GET /api/v1/users/<int:user_id>`**:
-    -   Должен находить пользователя по `user_id` и возвращать его данные.
-    -   Если пользователь не найден, возвращать ошибку 404.
+For a detailed and interactive API documentation, run the application and visit `http://localhost:8000/docs`.
 
-3.  **`POST /api/v1/users`**:
-    -   Должен создавать нового пользователя.
-    -   Принимает JSON с полями: `nickname`, `email`, `role`, `city`.
-    -   Должен проверять, что `nickname` и `email` уникальны. Если нет, возвращать ошибку 400.
-    -   Возвращает созданный объект пользователя со статусом 201."
+## Continuous Integration
 
----
-
-## Шаг 3: Создание API для Команд (Teams)
-
-**Промпт 3:**
-
-"Продолжаем. Теперь нам нужен API для команд в `app.py`. Реализуй следующие эндпоинты:
-
-1.  **`GET /api/v1/teams`**:
-    -   Должен возвращать список всех команд.
-    -   Каждая команда в списке должна содержать все поля из модели `Team`.
-
-2.  **`GET /api/v1/teams/<int:team_id>`**:
-    -   Должен находить команду по `team_id` и возвращать её полные данные.
-    -   Если команда не найдена, возвращать ошибку 404.
-
-3.  **`POST /api/v1/teams`**:
-    -   Должен создавать новую команду.
-    -   Принимает JSON с полями: `name`, `captainId`, `game`, `city`.
-    -   Возвращает созданный объект команды со статусом 201."
-
----
-
-## Шаг 4: Создание API для Турниров (Tournaments)
-
-**Промпт 4:**
-
-"Реализуй API для турниров в том же файле `app.py`.
-
-1.  **`GET /api/v1/tournaments`**:
-    -   Должен возвращать список всех турниров со всеми полями.
-
-2.  **`GET /api/v1/tournaments/<int:tournament_id>`**:
-    -   Должен находить турнир по `tournament_id` и возвращать его полные данные.
-    -   Если турнир не найден, возвращать ошибку 404.
-
-3.  **`POST /api/v1/tournaments`**:
-    -   Должен создавать новый турнир.
-    -   Принимает JSON с полями: `name`, `game`, `status`, `maxParticipants`, `startDate`.
-    -   Возвращает созданный объект турнира со статусом 201."
-
----
-
-## Шаг 5: Создание API для Постов и Комментариев
-
-**Промпт 5:**
-
-"Давай добавим эндпоинты для социальной ленты.
-
-1.  **`GET /api/v1/posts`**:
-    -   Должен возвращать список всех постов.
-
-2.  **`POST /api/v1/posts`**:
-    -   Создает новый пост. Принимает JSON: `authorId`, `content`, `teamId` (опционально).
-    -   Возвращает созданный пост со статусом 201.
-
-3.  **`GET /api/v1/posts/<int:post_id>/comments`**:
-    -   Возвращает все комментарии для конкретного поста.
-
-4.  **`POST /api/v1/posts/<int:post_id>/comments`**:
-    -   Добавляет новый комментарий к посту. Принимает JSON: `authorId`, `text`.
-    -   Возвращает созданный комментарий со статусом 201."
-
----
-
-## Шаг 6: Создание API для остальных сущностей
-
-**Промпт 6:**
-
-"Почти готово. Давай добавим базовые `GET` эндпоинты для оставшихся сущностей, чтобы фронтенд мог получать эти данные. Добавь в `app.py`:
-
-1.  **`GET /api/v1/playgrounds`**:
-    -   Должен возвращать список всех площадок.
-
-2.  **`GET /api/v1/quests`**:
-    -   Должен возвращать список всех квестов.
-
-3.  **`GET /api/v1/achievements`**:
-    -   Должен возвращать список всех достижений.
-
-4.  **`GET /api/v1/sponsors`**:
-    -   Должен возвращать список всех спонсоров.
-    
-5.  **`GET /api/v1/profiles/player`**:
-    -   Должен возвращать список всех профилей игроков (`PlayerProfile`).
-    
-6.  **`GET /api/v1/profiles/referee`**:
-    -   Должен возвращать список всех профилей судей (`RefereeProfile`).
-
-7.  **`GET /api/v1/profiles/coach`**:
-    -   Должен возвращать список всех профилей тренеров (`CoachProfile`).
-"
-
----
-
-После выполнения этих шести шагов у вас будет готов базовый Python-бэкенд, полностью соответствующий потребностям текущего фронтенда. Вы сможете заменить моковые данные в файлах фронтенда на реальные вызовы к этим API.
-    
-    
+This project uses GitHub Actions for Continuous Integration. The workflow, defined in `.github/workflows/ci.yml`, automatically builds the Docker image on every push to the `main` branch to ensure that the application is always in a deployable state.

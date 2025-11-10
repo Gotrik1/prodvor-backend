@@ -1,16 +1,30 @@
-
 from pydantic import BaseModel
+from typing import Optional
 
-# Схема для создания и чтения Sport
+# Shared properties
 class SportBase(BaseModel):
-    name: str
-    isTeamSport: bool
+    name: Optional[str] = None
 
+# Properties to receive on item creation
 class SportCreate(SportBase):
+    name: str
+
+# Properties to receive on item update
+class SportUpdate(SportBase):
     pass
 
-class Sport(SportBase):
-    id: str
+# Properties shared by models in DB
+class SportInDBBase(SportBase):
+    id: int
+    name: str
 
     class Config:
-        from_attributes = True
+        orm_mode = True
+
+# Properties to return to client
+class Sport(SportInDBBase):
+    pass
+
+# Properties stored in DB
+class SportInDB(SportInDBBase):
+    pass
