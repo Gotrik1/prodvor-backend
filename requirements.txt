@@ -13,8 +13,7 @@ sqlalchemy>=2
 alembic
 pydantic[email] # подтянет email-validator
 pydantic-settings
-python-jose[cryptography] # JWT
-passlib[bcrypt] 
+python-jose[cryptography] 
 python-multipart 
 redis 
 fastapi-limiter
