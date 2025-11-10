@@ -9,6 +9,7 @@ import uuid
 auth_bp = APIBlueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
+@auth_bp.doc(operation_id='register')
 def register():
     """
     Register a new user
@@ -24,9 +25,9 @@ def register():
           schema:
             $ref: '#/components/schemas/UserRegistration'
     responses:
-      201:
+      '201':
         description: User created successfully.
-      409:
+      '409':
         description: User with this email or nickname already exists.
     """
     data = request.get_json()
@@ -34,7 +35,7 @@ def register():
     email = data.get('email')
     nickname = data.get('nickname')
     password = data.get('password')
-    role = data.get('role', 'player') # По умолчанию роль - player
+    role = data.get('role', 'player')
 
     if User.query.filter_by(email=email).first() or User.query.filter_by(nickname=nickname).first():
         abort(409, description="Пользователь с таким email или никнеймом уже существует")
@@ -54,7 +55,6 @@ def register():
         gender=data.get('gender')
     )
 
-    # Создаем специфичный профиль в зависимости от роли
     if role == 'player':
         new_user.player_profile = PlayerProfile()
     elif role == 'referee':
@@ -68,25 +68,40 @@ def register():
     return jsonify(new_user.to_dict()), 201
 
 @auth_bp.route('/login', methods=['POST'])
+@auth_bp.doc(operation_id='login')
 def login():
     """
-    Log in a user
+    Login
     ---
-    tags:
-      - Auth
-    summary: Authenticate a user
-    description: Authenticates a user with email and password, returning access and refresh tokens.
+    summary: Login
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserLogin'
+            type: object
+            required: [email, password]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                minLength: 6
     responses:
-      200:
-        description: Login successful.
-      401:
-        description: Invalid credentials.
+      '200':
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                refresh_token:
+                  type: string
+      '401':
+        description: Unauthorized
     """
     data = request.get_json()
     email = data.get('email')
@@ -108,14 +123,14 @@ def login():
         db.session.commit()
 
         return jsonify({
-            "accessToken": access_token,
-            "refreshToken": refresh_token,
-            "user": user.to_dict(include_teams=True, include_sports=True)
+            "access_token": access_token,
+            "refresh_token": refresh_token
         })
     
-    abort(401, description="Неверные учетные данные")
+    abort(401, description="Invalid credentials")
 
 @auth_bp.route('/refresh', methods=['POST'])
+@auth_bp.doc(operation_id='refreshToken')
 @jwt_required(refresh=True)
 def refresh():
     """
@@ -128,9 +143,9 @@ def refresh():
     security:
       - bearerAuth: []
     responses:
-      200:
+      '200':
         description: Access token refreshed successfully.
-      401:
+      '401':
         description: Unauthorized.
     """
     current_user_id = get_jwt_identity()
@@ -138,6 +153,7 @@ def refresh():
     return jsonify(accessToken=new_access_token)
 
 @auth_bp.route('/logout', methods=['POST'])
+@auth_bp.doc(operation_id='logout')
 @jwt_required(refresh=True)
 def logout():
     """
@@ -146,30 +162,27 @@ def logout():
     tags:
       - Auth
     summary: Invalidate a refresh token
-    description: Logs the user out by deleting their session based on the provided refresh token.
+    description: Logs the user out by invalidating the refresh token. The token is passed in the Authorization header.
     security:
       - bearerAuth: []
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - refreshToken
-            properties:
-              refreshToken:
-                type: string
     responses:
-      200:
+      '200':
         description: Logout successful.
-      401:
+      '401':
         description: Unauthorized.
+      '404':
+        description: Token not found.
     """
-    token = request.get_json().get('refreshToken')
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split()[1] if auth_header else None
+
+    if not token:
+        abort(401, description="Authorization header is missing.")
+
     session = UserSession.query.filter_by(refreshToken=token).first()
     if session:
         db.session.delete(session)
         db.session.commit()
-    
-    return jsonify({"message": "Вы успешно вышли из системы"}), 200
+        return jsonify({"message": "Вы успешно вышли из системы"}), 200
+    else:
+        abort(404, "Сессия не найдена или уже завершена.")

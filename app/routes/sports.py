@@ -9,6 +9,7 @@ import uuid
 sports_bp = APIBlueprint('sports', __name__)
 
 @sports_bp.route('/sports/', methods=['GET'])
+@sports_bp.doc(operation_id='listSports')
 def get_sports():
     """
     Get all sports
@@ -49,6 +50,7 @@ def get_sports():
     return jsonify(serialize_pagination(sports_pagination, 'data', lambda s: s.to_dict()))
 
 @sports_bp.route('/sports', methods=['POST'])
+@sports_bp.doc(operation_id='createSport')
 def create_sport():
     """
     Create a new sport

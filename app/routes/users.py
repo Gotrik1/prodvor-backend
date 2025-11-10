@@ -3,7 +3,7 @@ from apiflask import APIBlueprint
 from flask import jsonify, request, abort
 from uuid import UUID
 from ..models import db, User, FriendRequest, Team, UserSettings, UserPrivacySettings, TeamFollowers
-from ..utils.decorators import jwt_required
+from flask_jwt_extended import jwt_required, current_user
 
 users_bp = APIBlueprint('users', __name__, url_prefix='/api/v1/users')
 
@@ -41,8 +41,9 @@ def get_profile_buttons(current_user_id, profile_owner):
     return buttons
 
 @users_bp.route('/<string:user_id>', methods=['GET'])
-@jwt_required
-def get_user(current_user, user_id):
+@users_bp.doc(operation_id='getUserById')
+@jwt_required()
+def get_user(user_id):
     """Get user profile by ID. Returns a full user object, including player_profile if available."""
     try:
         user_uuid = UUID(user_id, version=4)
@@ -54,16 +55,19 @@ def get_user(current_user, user_id):
     return jsonify(user.to_dict(profile_buttons=profile_buttons, include_settings=False))
 
 @users_bp.route('/me', methods=['GET'])
-@jwt_required
-def get_me(current_user):
+@users_bp.doc(operation_id='getCurrentUser')
+@jwt_required()
+def get_me():
     """Get current user's profile."""
+    # current_user is now a proxy from flask_jwt_extended
     user = User.query.get_or_404(current_user.id)
     profile_buttons = get_profile_buttons(current_user.id, user)
     return jsonify(user.to_dict(include_teams=True, profile_buttons=profile_buttons, include_settings=True))
 
 @users_bp.route('/<string:user_id>/friends', methods=['GET'])
-@jwt_required
-def get_user_friends(current_user, user_id):
+@users_bp.doc(operation_id='listUserFriends')
+@jwt_required()
+def get_user_friends(user_id):
     """Get a paginated list of a user's friends."""
     try:
         user_uuid = UUID(user_id, version=4)
@@ -79,8 +83,9 @@ def get_user_friends(current_user, user_id):
     return jsonify(serialize_pagination(friends_pagination, lambda u: u.to_dict()))
 
 @users_bp.route('/<string:user_id>/followers', methods=['GET'])
-@jwt_required
-def get_user_followers(current_user, user_id):
+@users_bp.doc(operation_id='listUserFollowers')
+@jwt_required()
+def get_user_followers(user_id):
     """Get a paginated list of a user's followers."""
     try:
         user_uuid = UUID(user_id, version=4)
@@ -96,8 +101,9 @@ def get_user_followers(current_user, user_id):
     return jsonify(serialize_pagination(followers_pagination, lambda u: u.to_dict()))
 
 @users_bp.route('/<string:user_id>/following', methods=['GET'])
-@jwt_required
-def get_user_following(current_user, user_id):
+@users_bp.doc(operation_id='listUserFollowing')
+@jwt_required()
+def get_user_following(user_id):
     """Get paginated lists of users and teams a user is following."""
     try:
         user_uuid = UUID(user_id, version=4)

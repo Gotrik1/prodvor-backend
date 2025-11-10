@@ -9,6 +9,7 @@ from app.routes.users import serialize_pagination # Импортируем ут�
 playgrounds_bp = APIBlueprint('playgrounds', __name__)
 
 @playgrounds_bp.route('/playgrounds', methods=['GET'])
+@playgrounds_bp.doc(operation_id='listPlaygrounds')
 def get_playgrounds():
     """
     Get all playgrounds
@@ -52,6 +53,7 @@ def get_playgrounds():
     return jsonify(serialize_pagination(playgrounds_pagination, 'data', lambda p: p.to_dict()))
 
 @playgrounds_bp.route('/playgrounds', methods=['POST'])
+@playgrounds_bp.doc(operation_id='createPlayground')
 @jwt_required()
 def create_playground():
     """

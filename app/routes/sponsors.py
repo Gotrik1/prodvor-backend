@@ -7,6 +7,7 @@ from app.routes.users import serialize_pagination
 sponsors_bp = APIBlueprint('sponsors', __name__)
 
 @sponsors_bp.route('/sponsors', methods=['GET'])
+@sponsors_bp.doc(operation_id='listSponsors')
 def get_sponsors():
     """
     Get all sponsors
