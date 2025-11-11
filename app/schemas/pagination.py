@@ -10,6 +10,6 @@ class PaginationMeta(BaseModel):
     total: int = Field(..., description="Всего элементов")
     pages: int = Field(..., description="Всего страниц")
 
-class PaginatedResponse(Generic[T], BaseModel):
+class PaginatedResponse(BaseModel, Generic[T]):
     data: List[T] = Field(..., description="Список элементов")
     meta: PaginationMeta = Field(..., description="Мета-информация о пагинации")

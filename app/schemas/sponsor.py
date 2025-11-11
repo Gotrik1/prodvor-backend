@@ -16,7 +16,7 @@ class SponsorInDBBase(SponsorBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Sponsor(SponsorInDBBase):
     pass

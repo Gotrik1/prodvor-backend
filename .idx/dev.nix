@@ -14,6 +14,7 @@
     pkgs.inotify-tools
     pkgs.entr
     pkgs.python3
+    pkgs.python3Packages.pip
     pkgs.lsof
     pkgs.postgresql
     pkgs.redocly
