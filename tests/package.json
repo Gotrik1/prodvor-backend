@@ -20,6 +20,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "jest-cli": "^30.2.0",
     "yargs": "^18.0.0"
   }
 }
