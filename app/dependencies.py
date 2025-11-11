@@ -17,7 +17,7 @@ async def get_db():
     async with SessionLocal() as session:
         yield session
 
-def get_current_user(db: AsyncSession = Depends(get_db), token: str = Depends(reusable_oauth2)):
+async def get_current_user(db: AsyncSession = Depends(get_db), token: str = Depends(reusable_oauth2)):
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
@@ -33,7 +33,7 @@ def get_current_user(db: AsyncSession = Depends(get_db), token: str = Depends(re
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    db_user = user.get(db, id=token_data.sub)
+    db_user = await user.get(db, id=token_data.sub)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
