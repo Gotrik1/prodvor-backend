@@ -5,6 +5,8 @@ from typing import List, Any
 
 from app import crud, schemas, models
 from app.dependencies import get_db, get_current_user
+from app.schemas.auth import Msg
+from app.schemas.team import IsFollowing
 
 router = APIRouter()
 
@@ -20,7 +22,7 @@ def read_teams(
     teams = crud.team.get_multi(db, skip=skip, limit=limit)
     return teams
 
-@router.post("", response_model=schemas.team.Team)
+@router.post("", response_model=schemas.team.Team, dependencies=[Depends(get_current_user)])
 def create_team(
     *,
     db: Session = Depends(get_db),
@@ -56,7 +58,7 @@ def read_team(
         )
     return team
 
-@router.delete("/{team_id}/members/{user_id}", response_model=Any)
+@router.delete("/{team_id}/members/{user_id}", response_model=Msg, dependencies=[Depends(get_current_user)])
 def remove_member(
     *,
     db: Session = Depends(get_db),
@@ -82,7 +84,7 @@ def remove_member(
     crud.team.remove_member(db, team=team, user=user)
     return {"message": "Player removed successfully"}
 
-@router.post("/{team_id}/logo", response_model=schemas.team.Team)
+@router.post("/{team_id}/logo", response_model=schemas.team.Team, dependencies=[Depends(get_current_user)])
 def update_team_logo(
     *,
     db: Session = Depends(get_db),
@@ -101,7 +103,7 @@ def update_team_logo(
     team = crud.team.update(db, db_obj=team, obj_in=logo_in)
     return team
 
-@router.post("/{team_id}/apply", response_model=Any)
+@router.post("/{team_id}/apply", response_model=Msg, dependencies=[Depends(get_current_user)])
 def apply_to_team(
     *,
     db: Session = Depends(get_db),
@@ -122,7 +124,7 @@ def apply_to_team(
     crud.team.create_application(db, team_id=team_id, user_id=current_user.id)
     return {"message": "Application sent successfully"}
 
-@router.get("/{team_id}/applications", response_model=List[schemas.user.User])
+@router.get("/{team_id}/applications", response_model=List[schemas.user.User], dependencies=[Depends(get_current_user)])
 def get_applications(
     *,
     db: Session = Depends(get_db),
@@ -140,7 +142,7 @@ def get_applications(
     applications = crud.team.get_applications(db, team_id=team_id)
     return applications
 
-@router.post("/{team_id}/applications/{user_id}/respond", response_model=Any)
+@router.post("/{team_id}/applications/{user_id}/respond", response_model=Msg, dependencies=[Depends(get_current_user)])
 def respond_to_application(
     *,
     db: Session = Depends(get_db),
@@ -173,7 +175,7 @@ def respond_to_application(
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
 
-@router.post("/{team_id}/follow", response_model=Any)
+@router.post("/{team_id}/follow", response_model=IsFollowing, dependencies=[Depends(get_current_user)])
 def follow_team(
     *,
     db: Session = Depends(get_db),

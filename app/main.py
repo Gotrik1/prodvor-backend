@@ -2,6 +2,7 @@
 # app/main.py
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from app.core.config import settings
 from app.routers import (
@@ -19,6 +20,7 @@ from app.routers import (
     teams,
     users,
 )
+from app.schemas.generic import Msg, Status
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -51,10 +53,40 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 
 app.include_router(api_router, prefix="/api/v1")
 
-@app.get("/")
+@app.get("/", response_model=Msg)
 def read_root():
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}
 
-@app.get("/health")
+@app.get("/health", response_model=Status)
 def health_check():
     return {"status": "ok"}
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=settings.PROJECT_NAME,
+        version="1.0.0",
+        description="Here's a description of the API",
+        routes=app.routes,
+    )
+    # This part is for modifying the OpenAPI schema
+    for schema in openapi_schema["components"]["schemas"].values():
+        if "properties" in schema:
+            for prop, value in schema["properties"].items():
+                # Fix for Optional fields being represented as anyOf
+                if "anyOf" in value:
+                    types = [v["type"] for v in value["anyOf"] if "type" in v]
+                    if "null" in types:
+                        value["nullable"] = True
+                        # Remove the null type from anyOf and get the first other type
+                        non_null_types = [t for t in value["anyOf"] if t.get("type") != "null"]
+                        if non_null_types:
+                            value.update(non_null_types[0])
+                        del value["anyOf"]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi

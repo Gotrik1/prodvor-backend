@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 import uuid
+from datetime import datetime
 
 class InvitationBase(BaseModel):
     user_id: uuid.UUID
@@ -14,6 +15,8 @@ class InvitationUpdate(InvitationBase):
 
 class InvitationInDBBase(InvitationBase):
     id: int
+    created_at: datetime
+    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 class Invitation(InvitationInDBBase):

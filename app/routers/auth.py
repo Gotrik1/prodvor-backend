@@ -1,6 +1,5 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app import schemas, crud, models
@@ -12,32 +11,32 @@ from app.utils.token import generate_access_token
 router = APIRouter()
 
 @router.post("/register", response_model=schemas.user.User)
-def register(
+async def register(
     *, 
-    db: Session = Depends(get_db), 
+    db: AsyncSession = Depends(get_db), 
     user_in: schemas.user.UserCreate
 ):
     """
     Register a new user.
     """
-    user = crud.user.get_by_email(db, email=user_in.email)
+    user = await crud.user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
-    user = crud.user.create(db, obj_in=user_in)
+    user = await crud.user.create(db, obj_in=user_in)
     return user
 
 @router.post("/login", response_model=schemas.auth.Token)
-def login(
-    db: Session = Depends(get_db),
+async def login(
+    db: AsyncSession = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = crud.user.authenticate(
+    user = await crud.user.authenticate(
         db,
         email=form_data.username,
         password=form_data.password
@@ -66,9 +65,9 @@ def refresh(
         "token_type": "bearer",
     }
 
-@router.post("/logout")
+@router.post("/logout", response_model=schemas.auth.Msg)
 def logout(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """

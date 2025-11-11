@@ -42,13 +42,13 @@ def get_profile_buttons(db: Session, current_user_id: UUID, profile_owner: User)
     buttons.append(ProfileButton(action={"type": "more_options"}, text="..."))
     return buttons
 
-@router.get("/me", response_model=UserProfile, operation_id="getCurrentUser")
+@router.get("/me", response_model=UserProfile, operation_id="getCurrentUser", dependencies=[Depends(get_current_user)])
 def read_users_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     user_profile = UserProfile.from_orm(current_user)
     user_profile.profile_buttons = get_profile_buttons(db, current_user.id, current_user)
     return user_profile
 
-@router.get("/{user_id}", response_model=UserProfile, operation_id="getUserById")
+@router.get("/{user_id}", response_model=UserProfile, operation_id="getUserById", dependencies=[Depends(get_current_user)])
 def read_user(user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     user = crud.user.get(db, id=user_id)
     if user is None:

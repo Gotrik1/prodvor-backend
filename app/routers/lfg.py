@@ -23,7 +23,7 @@ def read_lfgs(
     lfgs = crud.lfg.get_multi(db, skip=skip, limit=limit, type=type, sport_id=sport_id, role=role)
     return lfgs
 
-@router.post("", response_model=schemas.lfg.LFG)
+@router.post("", response_model=schemas.lfg.LFG, dependencies=[Depends(get_current_user)])
 def create_lfg(
     *,
     db: Session = Depends(get_db),

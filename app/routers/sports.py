@@ -9,7 +9,7 @@ from app.dependencies import get_db, get_current_user
 router = APIRouter()
 
 @router.get("", response_model=List[schemas.sport.Sport])
-def read_sports(
+async def read_sports(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
@@ -17,11 +17,11 @@ def read_sports(
     """
     Retrieve sports.
     """
-    sports = crud.sport.get_multi(db, skip=skip, limit=limit)
+    sports = await crud.sport.get_multi(db, skip=skip, limit=limit)
     return sports
 
 @router.post("", response_model=schemas.sport.Sport)
-def create_sport(
+async def create_sport(
     *,
     db: Session = Depends(get_db),
     sport_in: schemas.sport.SportCreate,
@@ -30,11 +30,11 @@ def create_sport(
     """
     Create new sport.
     """
-    sport = crud.sport.get_by_name(db, name=sport_in.name)
+    sport = await crud.sport.get_by_name(db, name=sport_in.name)
     if sport:
         raise HTTPException(
             status_code=400,
             detail="Sport with this name already exists in the system.",
         )
-    sport = crud.sport.create(db, obj_in=sport_in)
+    sport = await crud.sport.create(db, obj_in=sport_in)
     return sport

@@ -5,7 +5,7 @@ from app.dependencies import get_db, get_current_user
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.Like)
+@router.post("", response_model=schemas.Like, dependencies=[Depends(get_current_user)])
 def create_like(
     *, 
     db: Session = Depends(get_db),
@@ -18,7 +18,7 @@ def create_like(
         raise HTTPException(status_code=400, detail="You have already liked this post")
     return crud.like.create_with_user_and_post(db=db, obj_in=like_in, user_id=current_user.id, post_id=like_in.post_id)
 
-@router.delete("/{post_id}", response_model=schemas.Like)
+@router.delete("/{post_id}", response_model=schemas.Like, dependencies=[Depends(get_current_user)])
 def delete_like(
     *,
     db: Session = Depends(get_db),
@@ -37,7 +37,7 @@ def get_like_count_for_post(
 ):
     return crud.like.get_like_count_for_post(db, post_id=post_id)
 
-@router.get("/user/{user_id}/liked-posts", response_model=list[schemas.Post])
+@router.get("/user/{user_id}/liked-posts", response_model=list[schemas.Post], dependencies=[Depends(get_current_user)])
 def get_liked_posts_by_user(
     user_id: int,
     db: Session = Depends(get_db)

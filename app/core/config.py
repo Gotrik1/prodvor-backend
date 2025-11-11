@@ -1,32 +1,35 @@
 # app/core/config.py
+from functools import lru_cache
+from typing import List
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Модель конфигурации
+    # --- базовые поля ---
+    PROJECT_NAME: str = "Prodvor API"
+    ENV: str = "dev"
+
+    # --- JWT-токены ---
+    SECRET_KEY: str = "a_very_secret_key"  # ключ для подписи JWT
+    ALGORITHM: str = "HS256"                # алгоритм подписи
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 дней
+
+    # --- База данных (async SQLAlchemy 2.x) ---
+    DATABASE_URL: str = Field(..., description="postgresql+asyncpg://user:pass@host:port/db")
+
+    # --- CORS ---
+    # Можно задать СТРОКОЙ через запятую или JSON-массивом — оба варианта парсятся.
+    CORS_ORIGINS: List[str] = Field(default_factory=lambda: ["*"])
+
+    # Pydantic v2: конфиг через SettingsConfigDict
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8", 
-        case_sensitive=True, 
-        extra='ignore' # Игнорировать лишние переменные
+        env_file=".env",       # грузим .env
+        env_file_encoding="utf-8",
+        extra="ignore",        # игнорим лишние переменные
     )
 
-    # ✔ Возвращаем PROJECT_NAME
-    PROJECT_NAME: str = "Prodvor API"
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
 
-    # База данных
-    DATABASE_URL: str = "postgresql://user:password@localhost/db"
-
-    # JWT-токены
-    SECRET_KEY: str = "supersecretkey"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 30 
-    ALGORITHM: str = "HS256"
-    
-    # Настройки CORS
-    CORS_ORIGINS: list[str] = ["*"]
-    
-    # Redis
-    REDIS_URL: str = "redis://localhost"
-
-settings = Settings()
+settings = get_settings()

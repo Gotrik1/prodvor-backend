@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import uuid
+from datetime import datetime
 
 class FriendRequestBase(BaseModel):
     requester_id: uuid.UUID
@@ -14,9 +15,9 @@ class FriendRequestUpdate(FriendRequestBase):
 
 class FriendRequestInDBBase(FriendRequestBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
 class FriendRequest(FriendRequestInDBBase):
     pass

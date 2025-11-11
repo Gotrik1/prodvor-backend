@@ -1,7 +1,8 @@
 import uuid
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
+from datetime import datetime
 
 class Playground(Base):
     __tablename__ = 'playgrounds'
@@ -10,3 +11,5 @@ class Playground(Base):
     address = Column(String(250))
     type = Column(String(100))
     surface = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

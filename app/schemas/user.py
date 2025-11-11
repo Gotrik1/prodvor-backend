@@ -1,13 +1,15 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List, Dict, Any
 import uuid
+from datetime import date, datetime
 
 # Shared properties
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     nickname: Optional[str] = None
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_date: Optional[date] = None
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
@@ -20,6 +22,8 @@ class UserUpdate(UserBase):
 
 class UserInDBBase(UserBase):
     id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 # Additional properties to return via API

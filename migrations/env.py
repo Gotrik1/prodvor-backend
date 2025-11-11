@@ -22,7 +22,8 @@ from app.db.base import Base
 # -----------------------
 
 # Загрузка переменных окружения из .env
-load_dotenv()
+env_path = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(dotenv_path=env_path, override=False)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -35,6 +36,7 @@ if config.config_file_name is not None:
 
 # Установка DATABASE_URL для Alembic
 config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL") or "")
+print("ALEMBIC sqlalchemy.url =", config.get_main_option("sqlalchemy.url"))
 
 # Указываем цель метаданных для автогенерации
 target_metadata = Base.metadata

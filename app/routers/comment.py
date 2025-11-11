@@ -5,7 +5,7 @@ from app.dependencies import get_db, get_current_user
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.Comment)
+@router.post("", response_model=schemas.Comment, dependencies=[Depends(get_current_user)])
 def create_comment(
     *, 
     db: Session = Depends(get_db),
@@ -30,7 +30,7 @@ def read_comments_for_post(
 ):
     return crud.comment.get_multi_by_post(db, post_id=post_id, skip=skip, limit=limit)
 
-@router.put("/{comment_id}", response_model=schemas.Comment)
+@router.put("/{comment_id}", response_model=schemas.Comment, dependencies=[Depends(get_current_user)])
 def update_comment(
     *,
     db: Session = Depends(get_db),
@@ -42,7 +42,7 @@ def update_comment(
     # Add authorization check here if needed
     return crud.comment.update(db=db, db_obj=comment, obj_in=comment_in)
 
-@router.delete("/{comment_id}", response_model=schemas.Comment)
+@router.delete("/{comment_id}", response_model=schemas.Comment, dependencies=[Depends(get_current_user)])
 def delete_comment(
     *,
     db: Session = Depends(get_db),

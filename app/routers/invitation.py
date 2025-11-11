@@ -5,7 +5,7 @@ from app.dependencies import get_db, get_current_user
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.Invitation)
+@router.post("", response_model=schemas.Invitation, dependencies=[Depends(get_current_user)])
 def create_invitation(
     *, 
     db: Session = Depends(get_db),
@@ -15,7 +15,7 @@ def create_invitation(
     # Add logic here to ensure only team admins can invite
     return crud.invitation.create_invitation(db=db, obj_in=invitation_in)
 
-@router.get("/user/{user_id}", response_model=list[schemas.Invitation])
+@router.get("/user/{user_id}", response_model=list[schemas.Invitation], dependencies=[Depends(get_current_user)])
 def get_user_invitations(
     user_id: int,
     db: Session = Depends(get_db),
@@ -26,7 +26,7 @@ def get_user_invitations(
         raise HTTPException(status_code=403, detail="Not authorized to view these invitations")
     return crud.invitation.get_invitations_for_user(db=db, user_id=user_id)
 
-@router.put("/{invitation_id}/accept", response_model=schemas.Invitation)
+@router.put("/{invitation_id}/accept", response_model=schemas.Invitation, dependencies=[Depends(get_current_user)])
 def accept_invitation(
     invitation_id: int,
     db: Session = Depends(get_db),
@@ -37,7 +37,7 @@ def accept_invitation(
         raise HTTPException(status_code=404, detail="Invitation not found or you are not the invited user")
     return invitation
 
-@router.put("/{invitation_id}/decline", response_model=schemas.Invitation)
+@router.put("/{invitation_id}/decline", response_model=schemas.Invitation, dependencies=[Depends(get_current_user)])
 def decline_invitation(
     invitation_id: int,
     db: Session = Depends(get_db),

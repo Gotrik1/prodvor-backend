@@ -1,10 +1,11 @@
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
-from sqlalchemy import Column, String, Integer, ForeignKey, Table
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
 import uuid
+from datetime import datetime
 
 from app.db.base_class import Base
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from .user import User
     from .user_team import UserTeam
     from .invitation import Invitation
+    from .team_event import TeamEvent
+    from .post import Post
 
 team_followers = Table(
     'team_followers', Base.metadata,
@@ -29,6 +32,8 @@ class Team(Base):
     game: Mapped[str] = mapped_column(String(100))
     rank: Mapped[int] = mapped_column(Integer, default=1200)
     city: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     captain: Mapped["User"] = relationship("User")
     followers: Mapped[List["User"]] = relationship(
@@ -39,3 +44,5 @@ class Team(Base):
     member_associations: Mapped[List["UserTeam"]] = relationship(back_populates="team")
     members: AssociationProxy[List["User"]] = association_proxy("member_associations", "user")
     invitations: Mapped[List["Invitation"]] = relationship('Invitation', back_populates='team', cascade="all, delete-orphan")
+    team_events: Mapped[List["TeamEvent"]] = relationship("TeamEvent", back_populates="team")
+    posts: Mapped[List["Post"]] = relationship("Post", back_populates="team")

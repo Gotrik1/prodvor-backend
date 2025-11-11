@@ -6,7 +6,7 @@ import uuid
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.FriendRequest)
+@router.post("", response_model=schemas.FriendRequest, dependencies=[Depends(get_current_user)])
 def create_friend_request(
     *, 
     db: Session = Depends(get_db),
@@ -24,14 +24,14 @@ def create_friend_request(
 
     return crud.friend_request.create_friend_request(db=db, obj_in=friend_request_in, requester_id=current_user.id)
 
-@router.get("/received", response_model=list[schemas.FriendRequest])
+@router.get("/received", response_model=list[schemas.FriendRequest], dependencies=[Depends(get_current_user)])
 def get_received_friend_requests(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.friend_request.get_received_friend_requests(db=db, user_id=current_user.id)
 
-@router.put("/{request_id}/accept", response_model=schemas.FriendRequest)
+@router.put("/{request_id}/accept", response_model=schemas.FriendRequest, dependencies=[Depends(get_current_user)])
 def accept_friend_request(
     request_id: int,
     db: Session = Depends(get_db),
@@ -43,7 +43,7 @@ def accept_friend_request(
     
     return crud.friend_request.accept_friend_request(db=db, request_id=request_id)
 
-@router.put("/{request_id}/decline", response_model=schemas.FriendRequest)
+@router.put("/{request_id}/decline", response_model=schemas.FriendRequest, dependencies=[Depends(get_current_user)])
 def decline_friend_request(
     request_id: int,
     db: Session = Depends(get_db),
@@ -55,7 +55,7 @@ def decline_friend_request(
 
     return crud.friend_request.decline_friend_request(db=db, request_id=request_id)
 
-@router.get("/friends", response_model=list[schemas.User])
+@router.get("/friends", response_model=list[schemas.User], dependencies=[Depends(get_current_user)])
 def get_friends(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)

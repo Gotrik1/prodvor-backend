@@ -1,7 +1,7 @@
 # .idx/dev.nix (IDX schema: channel + packages + env + idx.*)
 { pkgs, ... }:
 {
-  # Версию канала подправь при необходимости
+  # Канал можно оставить как есть
   channel = "stable-24.05";
 
   # Инструменты, которые должны переживать пересборки среды
@@ -19,17 +19,17 @@
     pkgs.postgresql
     pkgs.redocly
     pkgs.supabase-cli
-
   ];
 
   # Глобальные переменные окружения
   env = {
     # Git всегда использует ssh из Nix
     GIT_SSH_COMMAND = "${pkgs.openssh}/bin/ssh";
+    # В IDX/Firebase Studio докер-демон обычно висит на /tmp/docker.sock
     DOCKER_HOST = "unix:///tmp/docker.sock";
   };
 
-  # Включаем только Docker, PostgreSQL будет в нем
+  # Включаем Docker (если поддерживается этим рантаймом)
   services.docker.enable = true;
 
   # IDX-интеграции
@@ -42,26 +42,44 @@
       enable = true;
       previews = {
         web = {
-          # Запускаем Docker Compose, а затем FastAPI
           command = [
             "bash"
             "-c"
             ''
-              # 0. Ждем, пока Docker-демон запустится.
+              set -euo pipefail
+
               echo "Waiting for Docker daemon to start..."
-              while ! docker info > /dev/null 2>&1; do
+              # Ждём, пока docker начнёт отвечать
+              until docker info >/dev/null 2>&1; do
                 sleep 1
               done
               echo "Docker daemon started."
 
-              # 1. Запускаем все сервисы из docker-compose.yml в фоновом режиме.
-              docker-compose up -d --wait
+              echo "Starting docker compose services..."
+              # Фоллбек на v2/v1 синтаксис
+              if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+                docker compose up -d --wait || docker compose up -d
+              else
+                docker-compose up -d --wait || docker-compose up -d
+              fi
 
-              # 2. Устанавливаем DATABASE_URL для подключения к БД в Docker.
-              export DATABASE_URL="postgresql://prodvor:prodvor@localhost:5432/prodvor"
+              # Жёстко вычищаем внешний DATABASE_URL и проставляем asyncpg
+              unset DATABASE_URL || true
+              export DATABASE_URL='postgresql+asyncpg://postgres:postgres@127.0.0.1:54322/postgres'
 
-              # 3. Активируем venv и запускаем FastAPI с Uvicorn.
+              # Активируем/создаём venv
+              if [ ! -d ".venv" ]; then
+                echo "Creating virtualenv..."
+                python3 -m venv .venv
+              fi
               source .venv/bin/activate
+
+              # Обновляем pip и зависимости (тихо, чтобы не засорять лог)
+              python -m pip install --upgrade pip >/dev/null
+              if [ -f requirements.txt ]; then
+                pip install -r requirements.txt >/dev/null
+              fi
+
               echo "Запускаем FastAPI-сервер с Uvicorn..."
               exec uvicorn app.main:app --host=0.0.0.0 --port=8080 --reload
             ''

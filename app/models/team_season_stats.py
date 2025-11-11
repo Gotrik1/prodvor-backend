@@ -5,8 +5,8 @@ from app.db.base_class import Base
 
 class TeamSeasonStats(Base):
     __tablename__ = 'team_season_stats'
-    teamId = Column(UUID(as_uuid=True), ForeignKey('teams.id'), nullable=False)
-    season = Column(Integer, nullable=False)
+    teamId = Column(UUID(as_uuid=True), ForeignKey('teams.id'), primary_key=True, nullable=False)
+    season = Column(Integer, primary_key=True, nullable=False)
     leagueRank = Column(String(50))
     finalElo = Column(Integer)
     wins = Column(Integer)

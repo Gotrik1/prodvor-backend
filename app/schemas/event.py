@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -26,9 +26,9 @@ class EventInDBBase(EventBase):
     id: int
     name: str
     organizer_id: uuid.UUID
-
-    class Config:
-        from_attributes = True
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
 # Properties to return to client
 class Event(EventInDBBase):

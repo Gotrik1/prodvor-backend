@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 import uuid
+from datetime import datetime
 
 # Shared properties
 class TeamBase(BaseModel):
@@ -21,6 +22,8 @@ class TeamInDBBase(TeamBase):
     id: uuid.UUID
     name: str
     captain_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 # Properties to return to client
@@ -30,3 +33,6 @@ class Team(TeamInDBBase):
 # Properties stored in DB
 class TeamInDB(TeamInDBBase):
     pass
+
+class IsFollowing(BaseModel):
+    isFollowing: bool

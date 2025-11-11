@@ -1,11 +1,14 @@
 # app/schemas/auth.py
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-
 class TokenData(BaseModel):
     user_id: int | None = None
+
+class Msg(BaseModel):
+    message: str
