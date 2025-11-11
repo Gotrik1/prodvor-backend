@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Prodvor API"
 
     # JWT-токены
-    SECRET_KEY: str
+    SECRET_KEY: str = "supersecretkey"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30 
     ALGORITHM: str = "HS256"

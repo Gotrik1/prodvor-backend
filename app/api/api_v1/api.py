@@ -10,10 +10,11 @@ from app.api.api_v1.endpoints import (
     sport_event,
     team_event,
     user_favorite_sport,
+    login
 )
 
 api_router = APIRouter()
-
+api_router.include_router(login.router, tags=["login"])
 api_router.include_router(user.router, prefix="/users", tags=["users"])
 api_router.include_router(team.router, prefix="/teams", tags=["teams"])
 api_router.include_router(event.router, prefix="/events", tags=["events"])

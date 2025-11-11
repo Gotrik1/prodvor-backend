@@ -34,7 +34,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Установка DATABASE_URL для Alembic
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL") or "")
 
 # Указываем цель метаданных для автогенерации
 target_metadata = Base.metadata

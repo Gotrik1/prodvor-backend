@@ -36,4 +36,4 @@ class Team(Base):
         backref="followed_teams"
     )
     member_associations: Mapped[List["UserTeam"]] = relationship(back_populates="team")
-    members: list["User"] = association_proxy("member_associations", "user")
+    members: Mapped[List["User"]] = association_proxy("member_associations", "user")
