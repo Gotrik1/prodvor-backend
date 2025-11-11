@@ -14,7 +14,7 @@ class UserFavoriteSportUpdate(UserFavoriteSportBase):
 
 class UserFavoriteSportInDBBase(UserFavoriteSportBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserFavoriteSport(UserFavoriteSportInDBBase):
     pass

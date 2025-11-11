@@ -5,7 +5,6 @@ from app.db.base_class import Base
 
 class TeamEvent(Base):
     __tablename__ = 'team_event'
-    id = Column(Integer, primary_key=True, index=True)
     team_id = Column(Integer, ForeignKey('team.id'))
     event_id = Column(Integer, ForeignKey('event.id'))
 

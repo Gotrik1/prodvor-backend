@@ -1,5 +1,4 @@
 from .event import Event, EventCreate, EventUpdate
-from .token import Token, TokenPayload
 from .user import User, UserCreate, UserUpdate
 from .team import Team, TeamCreate, TeamUpdate
 from .sport import Sport, SportCreate, SportUpdate
@@ -13,3 +12,8 @@ from .sponsor import Sponsor, SponsorCreate, SponsorUpdate
 from .playground import Playground, PlaygroundCreate, PlaygroundUpdate
 from .lfg import LFG, LFGCreate, LFGUpdate
 from .subscription import Subscription, SubscriptionCreate, SubscriptionUpdate
+from .comment import Comment, CommentCreate, CommentUpdate
+from .like import Like, LikeCreate, LikeUpdate
+from .invitation import Invitation, InvitationCreate, InvitationUpdate
+from .friend_request import FriendRequest, FriendRequestCreate, FriendRequestUpdate
+from . import auth

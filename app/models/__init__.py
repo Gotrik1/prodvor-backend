@@ -15,3 +15,7 @@ from .user_favorite_sport import UserFavoriteSport
 from .notification import Notification
 from .subscription import Subscription
 from .friend_request import FriendRequest
+from .post import Post
+from .comment import Comment
+from .like import Like
+from .invitation import Invitation

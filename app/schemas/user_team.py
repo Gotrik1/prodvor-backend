@@ -14,7 +14,7 @@ class UserTeamUpdate(UserTeamBase):
 
 class UserTeamInDBBase(UserTeamBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserTeam(UserTeamInDBBase):
     pass

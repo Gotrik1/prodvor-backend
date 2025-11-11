@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
+from pydantic import BaseModel
 
 # Зависимости и CRUD
 from app.dependencies import get_db, get_current_user

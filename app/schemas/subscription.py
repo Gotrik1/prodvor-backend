@@ -14,7 +14,7 @@ class SubscriptionUpdate(SubscriptionBase):
 
 class SubscriptionInDBBase(SubscriptionBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Subscription(SubscriptionInDBBase):
     pass

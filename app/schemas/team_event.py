@@ -14,7 +14,7 @@ class TeamEventUpdate(TeamEventBase):
 
 class TeamEventInDBBase(TeamEventBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TeamEvent(TeamEventInDBBase):
     pass

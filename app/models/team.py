@@ -3,7 +3,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import Column, String, Integer, ForeignKey, Table
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
 import uuid
 
 from app.db.base_class import Base
@@ -11,6 +11,7 @@ from app.db.base_class import Base
 if TYPE_CHECKING:
     from .user import User
     from .user_team import UserTeam
+    from .invitation import Invitation
 
 team_followers = Table(
     'team_followers', Base.metadata,
@@ -36,4 +37,5 @@ class Team(Base):
         backref="followed_teams"
     )
     member_associations: Mapped[List["UserTeam"]] = relationship(back_populates="team")
-    members: Mapped[List["User"]] = association_proxy("member_associations", "user")
+    members: AssociationProxy[List["User"]] = association_proxy("member_associations", "user")
+    invitations: Mapped[List["Invitation"]] = relationship('Invitation', back_populates='team', cascade="all, delete-orphan")

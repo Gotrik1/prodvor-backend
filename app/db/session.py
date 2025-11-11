@@ -1,13 +1,8 @@
 # app/db/session.py
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# ✔ Возвращаемся к прямому использованию DATABASE_URL из окружения
-DATABASE_URL = os.getenv("DATABASE_URL")
+from app.core.config import settings
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
-
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

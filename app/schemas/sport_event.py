@@ -13,7 +13,7 @@ class SportEventUpdate(SportEventBase):
 
 class SportEventInDBBase(SportEventBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SportEvent(SportEventInDBBase):
     pass

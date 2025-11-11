@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, ConfigDict
+from typing import Optional, List, Dict, Any
 import uuid
 
 # Shared properties
@@ -20,9 +20,7 @@ class UserUpdate(UserBase):
 
 class UserInDBBase(UserBase):
     id: uuid.UUID
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Additional properties to return via API
 class User(UserInDBBase):
@@ -31,3 +29,10 @@ class User(UserInDBBase):
 # Additional properties stored in DB
 class UserInDB(UserInDBBase):
     hashed_password: str
+
+class ProfileButton(BaseModel):
+    action: Dict[str, Any]
+    text: str
+
+class UserProfile(User):
+    profile_buttons: List[ProfileButton] = []

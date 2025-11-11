@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # ✔ Возвращаем PROJECT_NAME
     PROJECT_NAME: str = "Prodvor API"
 
+    # База данных
+    DATABASE_URL: str = "postgresql://user:password@localhost/db"
+
     # JWT-токены
     SECRET_KEY: str = "supersecretkey"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 import uuid
 from datetime import datetime
@@ -16,9 +16,7 @@ class PostInDBBase(PostBase):
     id: int
     author_id: uuid.UUID
     created_at: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Post(PostInDBBase):
     pass

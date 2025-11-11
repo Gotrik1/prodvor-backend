@@ -1,12 +1,11 @@
-from pydantic import BaseModel, EmailStr
+# app/schemas/auth.py
+from pydantic import BaseModel
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
 class Token(BaseModel):
     access_token: str
-    refresh_token: str
+    token_type: str
 
-class TokenPayload(BaseModel):
-    sub: str | None = None
+
+class TokenData(BaseModel):
+    user_id: int | None = None

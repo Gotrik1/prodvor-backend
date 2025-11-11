@@ -1,0 +1,4 @@
+services:
+  placeholder:
+    image: alpine
+    command: ["echo", "docker-compose placeholder – nothing to start"]

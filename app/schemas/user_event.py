@@ -14,7 +14,7 @@ class UserEventUpdate(UserEventBase):
 
 class UserEventInDBBase(UserEventBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserEvent(UserEventInDBBase):
     pass

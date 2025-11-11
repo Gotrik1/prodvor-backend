@@ -7,6 +7,5 @@ from app.db.base_class import Base
 class Subscription(Base):
     __tablename__ = 'subscriptions'
 
-    id = Column(Integer, primary_key=True, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'))
     team_id = Column(UUID(as_uuid=True), ForeignKey('teams.id'))

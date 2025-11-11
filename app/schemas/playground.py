@@ -16,7 +16,7 @@ class PlaygroundInDBBase(PlaygroundBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Playground(PlaygroundInDBBase):
     pass

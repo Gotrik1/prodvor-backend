@@ -25,6 +25,7 @@
   env = {
     # Git всегда использует ssh из Nix
     GIT_SSH_COMMAND = "${pkgs.openssh}/bin/ssh";
+    DOCKER_HOST = "unix:///tmp/docker.sock";
   };
 
   # Включаем только Docker, PostgreSQL будет в нем

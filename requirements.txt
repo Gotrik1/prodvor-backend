@@ -32,3 +32,6 @@ prometheus-fastapi-instrumentator==7.0.0
 
 # AWS
 boto3==1.34.144
+
+# Linter
+mypy==1.11.0

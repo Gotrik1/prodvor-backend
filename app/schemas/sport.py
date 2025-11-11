@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 # Shared properties
@@ -17,9 +17,7 @@ class SportUpdate(SportBase):
 class SportInDBBase(SportBase):
     id: int
     name: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Properties to return to client
 class Sport(SportInDBBase):

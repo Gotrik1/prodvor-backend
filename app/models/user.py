@@ -20,6 +20,9 @@ if TYPE_CHECKING:
     from .coach_profile import CoachProfile
     from .player_profile import PlayerProfile
     from .referee_profile import RefereeProfile
+    from .post import Post
+    from .like import Like
+    from .invitation import Invitation
 
 class User(Base):
     __tablename__ = "users"
@@ -35,7 +38,9 @@ class User(Base):
 
     sessions: Mapped[List["Session"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     comments: Mapped[List["Comment"]] = relationship('Comment', back_populates='author', cascade="all, delete-orphan")
-    # posts = relationship('Post', back_populates='author', cascade="all, delete-orphan")
+    posts: Mapped[List["Post"]] = relationship('Post', back_populates='author', cascade="all, delete-orphan")
+    likes: Mapped[List["Like"]] = relationship('Like', back_populates='user', cascade="all, delete-orphan")
+    invitations: Mapped[List["Invitation"]] = relationship('Invitation', back_populates='user', cascade="all, delete-orphan")
     notifications: Mapped[List["Notification"]] = relationship('Notification', back_populates='user', cascade="all, delete-orphan")
 
     friend_requests_sent: Mapped[List["FriendRequest"]] = relationship('FriendRequest', foreign_keys='FriendRequest.from_user_id', backref='from_user', cascade="all, delete-orphan")

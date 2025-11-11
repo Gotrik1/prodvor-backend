@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 import uuid
 
@@ -21,9 +21,7 @@ class TeamInDBBase(TeamBase):
     id: uuid.UUID
     name: str
     captain_id: uuid.UUID
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Properties to return to client
 class Team(TeamInDBBase):
