@@ -21,4 +21,5 @@ from .like import Like
 from .invitation import Invitation
 from .user_settings import UserSettings
 from .user_privacy_settings import UserPrivacySettings
-from .looking_for_game import LookingForGame
+from .lfg import LFG
+from .sponsor import Sponsor

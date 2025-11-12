@@ -11,7 +11,11 @@ class TeamBase(BaseModel):
 # Properties to receive on item creation
 class TeamCreate(TeamBase):
     name: str
-    sport_id: str
+    sport_id: int
+    logoUrl: Optional[str] = None
+    game: Optional[str] = None
+    rank: Optional[int] = None
+    city: Optional[str] = None
 
 # Properties to receive on item update
 class TeamUpdate(TeamBase):

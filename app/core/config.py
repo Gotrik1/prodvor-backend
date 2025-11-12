@@ -12,13 +12,13 @@ class Settings(BaseSettings):
     # --- JWT-токены ---
     SECRET_KEY: str = "a_very_secret_key"  # ключ для подписи JWT
     ALGORITHM: str = "HS256"                # алгоритм подписи
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 дней
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 часа
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 365 * 100 # 100 лет
 
     # --- База данных (async SQLAlchemy 2.x) ---
     DATABASE_URL: str = Field(..., description="postgresql+asyncpg://user:pass@host:port/db")
 
     # --- CORS ---
-    # Можно задать СТРОКОЙ через запятую или JSON-массивом — оба варианта парсятся.
     CORS_ORIGINS: List[str] = Field(default_factory=lambda: ["*"])
 
     # Pydantic v2: конфиг через SettingsConfigDict

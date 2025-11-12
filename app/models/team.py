@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from sqlalchemy import Column, String, Integer, ForeignKey, Table, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .invitation import Invitation
     from .team_event import TeamEvent
     from .post import Post
+    from .lfg import LFG
 
 team_followers = Table(
     'team_followers', Base.metadata,
@@ -27,11 +28,11 @@ class Team(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
-    logoUrl: Mapped[str] = mapped_column(String(200))
-    captainId: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
-    game: Mapped[str] = mapped_column(String(100))
+    logoUrl: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    captain_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    game: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     rank: Mapped[int] = mapped_column(Integer, default=1200)
-    city: Mapped[str] = mapped_column(String(100))
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -46,3 +47,4 @@ class Team(Base):
     invitations: Mapped[List["Invitation"]] = relationship('Invitation', back_populates='team', cascade="all, delete-orphan")
     team_events: Mapped[List["TeamEvent"]] = relationship("TeamEvent", back_populates="team")
     posts: Mapped[List["Post"]] = relationship("Post", back_populates="team")
+    lfgs: Mapped[List["LFG"]] = relationship("LFG", back_populates="team")

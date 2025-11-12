@@ -14,7 +14,6 @@ from app.models.event import Event
 from app.models.friend_request import FriendRequest
 from app.models.invitation import Invitation
 from app.models.like import Like
-from app.models.looking_for_game import LookingForGame
 from app.models.notification import Notification
 from app.models.player_profile import PlayerProfile
 from app.models.quest import Quest

@@ -7,6 +7,8 @@ class LFGBase(BaseModel):
     sport: str
     description: str
     required_players: int
+    type: Optional[str] = None
+    team_id: Optional[uuid.UUID] = None
 
 class LFGCreate(LFGBase):
     creator_id: uuid.UUID

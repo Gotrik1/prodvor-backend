@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
+import uuid
 
 class PlaygroundBase(BaseModel):
     name: str
@@ -13,7 +14,7 @@ class PlaygroundUpdate(PlaygroundBase):
     pass
 
 class PlaygroundInDBBase(PlaygroundBase):
-    id: int
+    id: uuid.UUID
     model_config = ConfigDict(from_attributes=True)
 
 class Playground(PlaygroundInDBBase):

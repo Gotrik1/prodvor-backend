@@ -1,8 +1,8 @@
-"""Fix all model inconsistencies
+"""Final migration
 
-Revision ID: 3770c1acf0db
+Revision ID: 9f334b221f51
 Revises: 
-Create Date: 2025-11-11 11:32:04.654683
+Create Date: 2025-11-12 06:54:09.049654
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3770c1acf0db'
+revision = '9f334b221f51'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,7 +30,8 @@ def upgrade():
     op.create_table('playgrounds',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('name', sa.String(length=150), nullable=True),
-    sa.Column('address', sa.String(length=250), nullable=True),
+    sa.Column('location', sa.String(length=250), nullable=True),
+    sa.Column('sports', sa.String(length=250), nullable=True),
     sa.Column('type', sa.String(length=100), nullable=True),
     sa.Column('surface', sa.String(length=100), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -78,8 +79,9 @@ def upgrade():
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('nickname', sa.String(length=80), nullable=False),
-    sa.Column('firstName', sa.String(length=100), nullable=False),
-    sa.Column('lastName', sa.String(length=100), nullable=False),
+    sa.Column('first_name', sa.String(length=100), nullable=False),
+    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('birth_date', sa.Date(), nullable=True),
     sa.Column('hashed_password', sa.String(length=255), nullable=False),
     sa.Column('s3_path', sa.String(), nullable=True),
     sa.Column('uploaded_at', sa.DateTime(), nullable=True),
@@ -114,23 +116,14 @@ def upgrade():
     op.create_index(op.f('ix_event_name'), 'event', ['name'], unique=False)
     op.create_table('friend_requests',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('from_user_id', sa.UUID(), nullable=False),
-    sa.Column('to_user_id', sa.UUID(), nullable=False),
+    sa.Column('requester_id', sa.UUID(), nullable=False),
+    sa.Column('receiver_id', sa.UUID(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['from_user_id'], ['users.id'], name=op.f('fk_friend_requests_from_user_id_users')),
-    sa.ForeignKeyConstraint(['to_user_id'], ['users.id'], name=op.f('fk_friend_requests_to_user_id_users')),
+    sa.ForeignKeyConstraint(['receiver_id'], ['users.id'], name=op.f('fk_friend_requests_receiver_id_users')),
+    sa.ForeignKeyConstraint(['requester_id'], ['users.id'], name=op.f('fk_friend_requests_requester_id_users')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_friend_requests'))
-    )
-    op.create_table('looking_for_game',
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_looking_for_game_user_id_users')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_looking_for_game')),
-    sa.UniqueConstraint('user_id', name=op.f('uq_looking_for_game_user_id'))
     )
     op.create_table('notifications',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -144,18 +137,20 @@ def upgrade():
     )
     op.create_index(op.f('ix_notifications_id'), 'notifications', ['id'], unique=False)
     op.create_table('player_profile',
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_player_profile_user_id_users')),
-    sa.PrimaryKeyConstraint('user_id', name=op.f('pk_player_profile'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_player_profile'))
     )
     op.create_table('referee_profile',
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_referee_profile_user_id_users')),
-    sa.PrimaryKeyConstraint('user_id', name=op.f('pk_referee_profile'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_referee_profile'))
     )
     op.create_table('sessions',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -219,15 +214,32 @@ def upgrade():
     sa.PrimaryKeyConstraint('id', name=op.f('pk_invitations'))
     )
     op.create_index(op.f('ix_invitations_id'), 'invitations', ['id'], unique=False)
+    op.create_table('lfgs',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('creator_id', sa.UUID(), nullable=False),
+    sa.Column('sport', sa.String(), nullable=False),
+    sa.Column('description', sa.String(), nullable=False),
+    sa.Column('required_players', sa.Integer(), nullable=False),
+    sa.Column('type', sa.String(), nullable=True),
+    sa.Column('team_id', sa.UUID(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['creator_id'], ['users.id'], name=op.f('fk_lfgs_creator_id_users')),
+    sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_lfgs_team_id_teams')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_lfgs'))
+    )
+    op.create_index(op.f('ix_lfgs_creator_id'), 'lfgs', ['creator_id'], unique=False)
+    op.create_index(op.f('ix_lfgs_id'), 'lfgs', ['id'], unique=False)
+    op.create_index(op.f('ix_lfgs_team_id'), 'lfgs', ['team_id'], unique=False)
     op.create_table('posts',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('authorId', sa.UUID(), nullable=False),
-    sa.Column('teamId', sa.UUID(), nullable=True),
+    sa.Column('author_id', sa.UUID(), nullable=False),
+    sa.Column('team_id', sa.UUID(), nullable=True),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['authorId'], ['users.id'], name=op.f('fk_posts_authorId_users')),
-    sa.ForeignKeyConstraint(['teamId'], ['teams.id'], name=op.f('fk_posts_teamId_teams')),
+    sa.ForeignKeyConstraint(['author_id'], ['users.id'], name=op.f('fk_posts_author_id_users')),
+    sa.ForeignKeyConstraint(['team_id'], ['teams.id'], name=op.f('fk_posts_team_id_teams')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_posts'))
     )
     op.create_table('sport_event',
@@ -335,6 +347,10 @@ def downgrade():
     op.drop_table('subscriptions')
     op.drop_table('sport_event')
     op.drop_table('posts')
+    op.drop_index(op.f('ix_lfgs_team_id'), table_name='lfgs')
+    op.drop_index(op.f('ix_lfgs_id'), table_name='lfgs')
+    op.drop_index(op.f('ix_lfgs_creator_id'), table_name='lfgs')
+    op.drop_table('lfgs')
     op.drop_index(op.f('ix_invitations_id'), table_name='invitations')
     op.drop_table('invitations')
     op.drop_table('user_settings')
@@ -346,7 +362,6 @@ def downgrade():
     op.drop_table('player_profile')
     op.drop_index(op.f('ix_notifications_id'), table_name='notifications')
     op.drop_table('notifications')
-    op.drop_table('looking_for_game')
     op.drop_table('friend_requests')
     op.drop_index(op.f('ix_event_name'), table_name='event')
     op.drop_table('event')

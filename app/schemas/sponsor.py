@@ -3,8 +3,8 @@ from typing import Optional
 
 class SponsorBase(BaseModel):
     name: str
-    logo: Optional[str] = None
-    website: Optional[str] = None
+    logoUrl: Optional[str] = None
+    contribution: Optional[str] = None
 
 class SponsorCreate(SponsorBase):
     pass

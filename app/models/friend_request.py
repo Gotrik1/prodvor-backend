@@ -15,11 +15,11 @@ class FriendRequest(Base):
     __tablename__ = 'friend_requests'
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    from_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
-    to_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
+    requester_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
+    receiver_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
     status: Mapped[str] = mapped_column(String, default='pending') # pending, accepted, declined
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    from_user: Mapped["User"] = relationship("User", foreign_keys=[from_user_id], back_populates="friend_requests_sent")
-    to_user: Mapped["User"] = relationship("User", foreign_keys=[to_user_id], back_populates="friend_requests_received")
+    requester: Mapped["User"] = relationship("User", foreign_keys=[requester_id], back_populates="sent_friend_requests")
+    receiver: Mapped["User"] = relationship("User", foreign_keys=[receiver_id], back_populates="received_friend_requests")

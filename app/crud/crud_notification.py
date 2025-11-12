@@ -1,10 +1,14 @@
-from app.crud.base import CRUDBase
+# app/crud/crud_notification.py
+from sqlalchemy import select, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Notification
-from app.schemas.notification import NotificationCreate, NotificationUpdate
+import uuid
 
-
-class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUpdate]):
-    pass
-
-
-notification = CRUDNotification(Notification)
+async def get_notifications_for_user(db: AsyncSession, user_id: uuid.UUID):
+    stmt = (
+        select(Notification)
+        .where(Notification.user_id == user_id)
+        .order_by(desc(Notification.created_at))
+    )
+    res = await db.execute(stmt)
+    return [row[0] for row in res.all()]

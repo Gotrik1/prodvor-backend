@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app import crud, schemas, models
@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("", response_model=List[schemas.sport.Sport])
 async def read_sports(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
 ):
@@ -23,7 +23,7 @@ async def read_sports(
 @router.post("", response_model=schemas.sport.Sport)
 async def create_sport(
     *,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     sport_in: schemas.sport.SportCreate,
     current_user: models.User = Depends(get_current_user),
 ):

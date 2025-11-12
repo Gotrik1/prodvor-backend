@@ -8,7 +8,8 @@ class Playground(Base):
     __tablename__ = 'playgrounds'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(150))
-    address = Column(String(250))
+    location = Column(String(250))
+    sports = Column(String(250))
     type = Column(String(100))
     surface = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow)

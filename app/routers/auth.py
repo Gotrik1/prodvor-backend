@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app import schemas, crud, models
-from app.dependencies import get_db, get_current_user
-from app.utils.security import verify_password
+from app.dependencies import get_db, get_current_user, get_current_user_from_refresh_token
+from app.utils.security import add_to_blacklist
 from app.core.config import settings
-from app.utils.token import generate_access_token
+from app.utils.token import generate_access_token, generate_refresh_token
+from jose import jwt
 
 router = APIRouter()
 
@@ -48,12 +49,15 @@ async def login(
         "access_token": generate_access_token(
             data={"sub": str(user.id)}
         ),
+        "refresh_token": generate_refresh_token(
+            data={"sub": str(user.id)}
+        ),
         "token_type": "bearer",
     }
 
 @router.post("/refresh", response_model=schemas.auth.Token)
 def refresh(
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user_from_refresh_token),
 ):
     """
     Refresh access token
@@ -62,16 +66,28 @@ def refresh(
         "access_token": generate_access_token(
             data={"sub": str(current_user.id)}
         ),
+        "refresh_token": generate_refresh_token(
+            data={"sub": str(current_user.id)}
+        ),
         "token_type": "bearer",
     }
 
 @router.post("/logout", response_model=schemas.auth.Msg)
 def logout(
-    db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    authorization: str = Header(...),
 ):
     """
     Logout user
     """
-    # crud.user.logout(db, user=current_user)
+    try:
+        token = authorization.split(" ")[1]
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        jti = payload.get("jti")
+        if jti:
+            add_to_blacklist(jti)
+    except (jwt.JWTError, IndexError):
+        # Ignore errors here, if the token is invalid, it's already unusable
+        pass
     return {"message": "Logout successful"}

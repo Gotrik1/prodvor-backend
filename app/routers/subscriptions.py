@@ -1,33 +1,50 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-import uuid
-from typing import List
-
+# app/routers/subscriptions.py
+from fastapi import APIRouter, Depends, HTTPException, Response, Query
+from pydantic import BaseModel, UUID4
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user
-from app.schemas.subscription import SubscriptionCreate
-from app.schemas.notification import Notification
-from app.crud import crud_subscription, crud_notification
+from app import crud
 
 router = APIRouter()
 
-@router.post("/subscribe", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_user)])
-def subscribe(sub_in: SubscriptionCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    user_id = uuid.UUID(current_user["id"])
-    # TODO: Here we should probably create a notification for all team followers that a new user has subscribed
-    crud_subscription.follow_team(db, user_id=user_id, team_id=sub_in.team_id)
+class SubscribeRequest(BaseModel):
+    team_id: UUID4
 
-@router.post("/unsubscribe", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_user)])
-def unsubscribe(sub_in: SubscriptionCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    user_id = uuid.UUID(current_user["id"])
-    crud_subscription.unfollow_team(db, user_id=user_id, team_id=sub_in.team_id)
+@router.post("/subscribe", status_code=204)
+async def subscribe(req: SubscribeRequest,
+                    db: AsyncSession = Depends(get_db),
+                    current_user = Depends(get_current_user)):
+    # подписка на команду
+    ok = await crud.subscription.follow_team(
+        db, subscriber_id=current_user.id, team_id=req.team_id
+    )
+    if not ok:
+        # допускаем 204 даже если уже подписан, но точно не 422
+        pass
+    return Response(status_code=204)
 
-@router.get("/status", response_model=dict, dependencies=[Depends(get_current_user)])
-def get_subscription_status(team_id: uuid.UUID = Query(...), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    user_id = uuid.UUID(current_user["id"])
-    is_following = crud_subscription.is_following(db, user_id=user_id, team_id=team_id)
-    return {"is_following": is_following}
+@router.post("/unsubscribe", status_code=204)
+async def unsubscribe(req: SubscribeRequest,
+                      db: AsyncSession = Depends(get_db),
+                      current_user = Depends(get_current_user)):
+    await crud.subscription.unfollow_team(
+        db, subscriber_id=current_user.id, team_id=req.team_id
+    )
+    return Response(status_code=204)
 
-@router.get("/notifications", response_model=List[Notification], dependencies=[Depends(get_current_user)])
-def get_notification_history(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    user_id = uuid.UUID(current_user["id"])
-    return crud_notification.get_notifications_for_user(db, user_id=user_id)
+@router.get("/status")
+async def status(team_id: UUID4 = Query(...),
+                 db: AsyncSession = Depends(get_db),
+                 current_user = Depends(get_current_user)):
+    is_following = await crud.subscription.is_following(
+        db, subscriber_id=current_user.id, team_id=team_id
+    )
+    return {"is_following": bool(is_following)}
+
+@router.get("/notifications")
+async def get_notification_history(db: AsyncSession = Depends(get_db),
+                                   current_user = Depends(get_current_user)):
+    # имя функции должно существовать в crud_notification
+    return await crud.notification.get_notifications_for_user(
+        db, user_id=current_user.id
+    )

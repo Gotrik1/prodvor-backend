@@ -13,7 +13,7 @@ from .playground import Playground, PlaygroundCreate, PlaygroundUpdate
 from .lfg import LFG, LFGCreate, LFGUpdate
 from .subscription import Subscription, SubscriptionCreate, SubscriptionUpdate
 from .comment import Comment, CommentCreate, CommentUpdate
-from .like import Like, LikeCreate, LikeUpdate
+from .like import Like, LikeCreate, LikeUpdate, LikeCreateRequest, LikeCount
 from .invitation import Invitation, InvitationCreate, InvitationUpdate
 from .friend_request import FriendRequest, FriendRequestCreate, FriendRequestUpdate
 from . import auth

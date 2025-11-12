@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .post import Post
     from .like import Like
     from .invitation import Invitation
-    from .looking_for_game import LookingForGame
+    from .lfg import LFG
     from .user_favorite_sport import UserFavoriteSport
     from .event import Event
     from .user_event import UserEvent
@@ -53,8 +53,8 @@ class User(Base):
     notifications: Mapped[List["Notification"]] = relationship('Notification', back_populates='user', cascade="all, delete-orphan")
     events: Mapped[List["Event"]] = relationship(back_populates="organizer")
 
-    friend_requests_sent: Mapped[List["FriendRequest"]] = relationship('FriendRequest', foreign_keys='FriendRequest.from_user_id', back_populates='from_user', cascade="all, delete-orphan")
-    friend_requests_received: Mapped[List["FriendRequest"]] = relationship('FriendRequest', foreign_keys='FriendRequest.to_user_id', back_populates='to_user', cascade="all, delete-orphan")
+    sent_friend_requests: Mapped[List["FriendRequest"]] = relationship('FriendRequest', foreign_keys='FriendRequest.requester_id', back_populates='requester', cascade="all, delete-orphan")
+    received_friend_requests: Mapped[List["FriendRequest"]] = relationship('FriendRequest', foreign_keys='FriendRequest.receiver_id', back_populates='receiver', cascade="all, delete-orphan")
 
     team_associations: Mapped[List["UserTeam"]] = relationship(back_populates="user")
     teams = association_proxy("team_associations", "team")
@@ -65,6 +65,6 @@ class User(Base):
 
     user_settings: Mapped["UserSettings"] = relationship("UserSettings", back_populates="user", cascade="all, delete-orphan")
     user_privacy_settings: Mapped["UserPrivacySettings"] = relationship("UserPrivacySettings", back_populates="user", cascade="all, delete-orphan")
-    looking_for_game: Mapped["LookingForGame"] = relationship("LookingForGame", back_populates="user", cascade="all, delete-orphan")
+    lfgs: Mapped[List["LFG"]] = relationship("LFG", back_populates="creator", cascade="all, delete-orphan")
     favorite_sports: Mapped[List["UserFavoriteSport"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     user_events: Mapped[List["UserEvent"]] = relationship("UserEvent", back_populates="user")

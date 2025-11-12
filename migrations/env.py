@@ -41,6 +41,14 @@ print("ALEMBIC sqlalchemy.url =", config.get_main_option("sqlalchemy.url"))
 # Указываем цель метаданных для автогенерации
 target_metadata = Base.metadata
 
+def include_object(object, name, type_, reflected, compare_to):
+    """
+    Exclude the 'spatial_ref_sys' table from Alembic's consideration.
+    """
+    if type_ == "table" and name == "spatial_ref_sys":
+        return False
+    return True
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -49,6 +57,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -56,7 +65,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, 
+        target_metadata=target_metadata,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

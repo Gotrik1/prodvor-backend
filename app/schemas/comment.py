@@ -3,9 +3,8 @@ import uuid
 from datetime import datetime
 
 class CommentBase(BaseModel):
-    content: str
-    user_id: uuid.UUID
-    post_id: int
+    text: str
+    postId: uuid.UUID
 
 class CommentCreate(CommentBase):
     pass
@@ -14,7 +13,8 @@ class CommentUpdate(CommentBase):
     pass
 
 class CommentInDBBase(CommentBase):
-    id: int
+    id: uuid.UUID
+    authorId: uuid.UUID
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
