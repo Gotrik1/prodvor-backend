@@ -5,3 +5,6 @@ class Msg(BaseModel):
 
 class Status(BaseModel):
     status: str
+
+class IsFollowing(BaseModel):
+    isFollowing: bool

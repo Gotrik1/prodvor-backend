@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.crud.base import CRUDBase
 from app.models import User, Team
-from app.models.friend_request import FriendRequest
+from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.subscription import Subscription
 from app.models.user_team import UserTeam
 from app.schemas.user import UserCreate, UserUpdate
@@ -54,31 +54,32 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         fr = FriendRequest
         u = User
 
-        friend_id_case = case(
-            (fr.requester_id == user_id, fr.receiver_id),
-            else_=fr.requester_id
-        )
-
-        # Subquery to get friend IDs
-        friend_ids_subquery = select(friend_id_case.label('friend_id')).where(
-            and_(
-                fr.status == 'accepted',
-                or_(fr.requester_id == user_id, fr.receiver_id == user_id)
+        # subquery со списком friend_id
+        friend_ids_subq = (
+            select(
+                func.coalesce(
+                    func.nullif(fr.receiver_id, user_id),
+                    fr.requester_id
+                ).label("friend_id")
             )
-        ).alias('friend_ids')
+            .where(
+                fr.status == FriendRequestStatus.accepted,
+                or_(fr.requester_id == user_id, fr.receiver_id == user_id),
+            )
+        ).subquery()
 
-        # Query to get the total count of friends
-        total_query = select(func.count()).select_from(friend_ids_subquery)
-        total_result = await db.execute(total_query)
-        total = total_result.scalar_one()
+        # считаем total
+        total_q = select(func.count()).select_from(friend_ids_subq)
+        total = (await db.execute(total_q)).scalar_one()
 
-        # Query to get the list of friends with pagination
-        friends_query = select(u).join(
-            friend_ids_subquery, u.id == friend_ids_subquery.c.friend_id
-        ).offset(skip).limit(limit)
-
-        friends_result = await db.execute(friends_query)
-        friends = list(friends_result.scalars().all())
+        # вытаскиваем пользователей по friend_id с пагинацией
+        friends_q = (
+            select(u)
+            .where(u.id.in_(select(friend_ids_subq.c.friend_id)))
+            .offset(skip)
+            .limit(limit)
+        )
+        friends = (await db.execute(friends_q)).scalars().all()
 
         return friends, total
 

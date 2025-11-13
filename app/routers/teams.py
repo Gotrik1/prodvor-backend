@@ -1,20 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
 
 from app import crud, models, schemas
 from app.dependencies import get_db, get_current_user
-from sqlalchemy import select, and_, delete
-from app.models.subscription import Subscription
-from app.models.team import Team
-from app.models.user import User
+
 
 router = APIRouter()
 
 class LogoUpdate(BaseModel):
-    logoUrl: str | None = None
+    logoUrl: str | None = Field(None, alias="logoUrl")
 
 @router.get("", response_model=List[schemas.team.Team])
 async def read_teams(
@@ -68,7 +65,7 @@ async def list_applications(
 async def respond_to_application(
     team_id: UUID,
     user_id: UUID,
-    action: str = Query(..., regex="^(accept|decline)$"),
+    action: str = Query(..., pattern="^(accept|decline)$"),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -79,7 +76,7 @@ async def respond_to_application(
         await crud.team.decline(db, team_id=team_id, captain_id=current_user.id, user_id=user_id)
         return {"message": "Player declined"}
 
-@router.post("/{team_id}/apply", status_code=status.HTTP_200_OK)
+@router.post("/{team_id}/apply")
 async def apply_to_team(
     team_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -89,29 +86,22 @@ async def apply_to_team(
     return {"message": "Application sent successfully"}
 
 @router.post("/{team_id}/follow")
-async def toggle_follow_team(
+async def toggle_team_follow(
     team_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        delete(Subscription).where(
-            and_(
-                Subscription.user_id == current_user.id,
-                Subscription.team_id == team_id
-            )
-        )
+    team = await crud.team.get(db, id=team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    is_following = await crud.subscription.toggle(
+        db=db,
+        user_id=current_user.id,
+        team_id=team_id,
     )
 
-    if result.rowcount == 0:
-        new_sub = Subscription(user_id=current_user.id, team_id=team_id)
-        db.add(new_sub)
-        await db.commit()
-        return {"isFollowing": True}
-    
-    await db.commit()
-    return {"isFollowing": False}
-
+    return {"isFollowing": is_following}
 
 @router.post("/{team_id}/logo", response_model=schemas.team.Team)
 async def update_team_logo(

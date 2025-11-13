@@ -34,7 +34,7 @@ async def unsubscribe(req: SubscribeRequest,
 async def status(team_id: UUID4 = Query(...),
                  db: AsyncSession = Depends(get_db),
                  current_user = Depends(get_current_user)):
-    is_following = await crud.subscription.get_subscription_status(db=db, user_id=current_user.id, team_id=team_id)
+    is_following = await crud.subscription.is_subscribed(db=db, user_id=current_user.id, team_id=team_id)
     return {"is_following": is_following}
 
 @router.get("/notifications")

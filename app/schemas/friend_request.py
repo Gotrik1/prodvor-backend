@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict
 from app.models.friend_request import FriendRequestStatus
 
 
@@ -11,15 +11,7 @@ class FriendRequestBase(BaseModel):
 
 
 class FriendRequestCreate(FriendRequestBase):
-    receiver_id: UUID = Field(alias="receiverId")
-
-    @model_validator(mode="before")
-    @classmethod
-    def normalize_receiver_id(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "receiverId" in data and "receiver_id" not in data:
-                data["receiver_id"] = data["receiverId"]
-        return data
+    receiver_id: UUID
 
 
 class FriendRequestUpdate(FriendRequestBase):
