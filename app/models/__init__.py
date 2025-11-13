@@ -5,6 +5,7 @@ from .referee_profile import RefereeProfile
 from .coach_profile import CoachProfile
 from .session import Session
 from .team import Team
+from .team_application import TeamApplication
 from .sport import Sport
 from .event import Event
 from .user_event import UserEvent

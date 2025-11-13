@@ -1,42 +1,27 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
-import uuid
+from uuid import UUID
+from .user import User
 from datetime import datetime
 
-# Shared properties
 class TeamBase(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-
-# Properties to receive on item creation
-class TeamCreate(TeamBase):
     name: str
-    sport_id: int
-    logoUrl: Optional[str] = None
     game: Optional[str] = None
-    rank: Optional[int] = None
     city: Optional[str] = None
+    logoUrl: Optional[str] = Field(None, alias="logoUrl")
 
-# Properties to receive on item update
-class TeamUpdate(TeamBase):
+class TeamCreate(TeamBase):
     pass
 
-# Properties shared by models in DB
-class TeamInDBBase(TeamBase):
-    id: uuid.UUID
-    name: str
-    captain_id: uuid.UUID
+class TeamUpdate(TeamBase):
+    name: Optional[str] = None
+
+class Team(TeamBase):
+    id: UUID
+    captain_id: UUID
+    rank: int
     created_at: datetime
     updated_at: datetime
+    members: List[User] = []
+
     model_config = ConfigDict(from_attributes=True)
-
-# Properties to return to client
-class Team(TeamInDBBase):
-    pass
-
-# Properties stored in DB
-class TeamInDB(TeamInDBBase):
-    pass
-
-class IsFollowing(BaseModel):
-    isFollowing: bool

@@ -6,6 +6,7 @@ from app import crud, models, schemas
 from app.dependencies import get_db, get_current_user
 from app.schemas.pagination import PaginatedResponse
 import uuid
+from app.models.friend_request import FriendRequestStatus
 
 router = APIRouter()
 
@@ -44,10 +45,13 @@ async def accept_friend_request(
     if not friend_request or friend_request.receiver_id != current_user.id:
         raise HTTPException(status_code=404, detail="Friend request not found or you are not the receiver.")
     
-    if friend_request.status != 'pending':
+    if friend_request.status != FriendRequestStatus.pending:
         raise HTTPException(status_code=400, detail="Friend request is not pending.")
 
-    return await crud.friend_request.update(db=db, db_obj=friend_request, obj_in={"status": "accepted"})
+    friend_request.status = FriendRequestStatus.accepted
+    await db.flush()
+    await db.commit()
+    return friend_request
 
 @router.put("/{request_id}/decline", response_model=schemas.FriendRequest)
 async def decline_friend_request(
@@ -59,19 +63,7 @@ async def decline_friend_request(
     if not friend_request or friend_request.receiver_id != current_user.id:
         raise HTTPException(status_code=404, detail="Friend request not found or you are not the receiver.")
 
-    if friend_request.status != 'pending':
+    if friend_request.status != FriendRequestStatus.pending:
         raise HTTPException(status_code=400, detail="Friend request is not pending.")
 
-    return await crud.friend_request.update(db=db, db_obj=friend_request, obj_in={"status": "declined"})
-
-@router.get("/friends", response_model=PaginatedResponse[schemas.User])
-async def get_friends(
-    db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-    page: int = Query(1, alias="page", ge=1),
-    per_page: int = Query(10, alias="per_page", ge=1, le=100),
-):
-    skip = (page - 1) * per_page
-    friends, total = await crud.friend_request.get_friends_with_total(db=db, user_id=current_user.id, skip=skip, limit=per_page)
-    pages = math.ceil(total / per_page) if total > 0 else 0
-    return PaginatedResponse(data=friends, meta={"total": total, "page": page, "per_page": per_page, "pages": pages})
+    return await crud.friend_request.update(db=db, db_obj=friend_request, obj_in={"status": FriendRequestStatus.declined})

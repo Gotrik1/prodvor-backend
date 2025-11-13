@@ -1,72 +1,41 @@
-from fastapi import Depends, HTTPException, status
+from typing import AsyncGenerator
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from jose import jwt, JWTError
 from pydantic import BaseModel
+
+from app import crud, models
 from app.db.session import SessionLocal
-from app.core.config import settings
-from app.crud import user
-from app.models import User
-from app.utils.security import is_blacklisted
+from app.schemas.token import TokenData
+from app.utils.token import verify_token
+from app.utils.blacklist import is_blacklisted
 
-class TokenData(BaseModel):
-    sub: str | None = None
-    jti: str | None = None
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/api/v1/auth/login")
+class Pagination(BaseModel):
+    limit: int
+    offset: int
 
-async def get_db():
+def get_pagination(
+    limit: int = Query(50, ge=1, le=100, description="Items per page"),
+    offset: int = Query(0, ge=0, description="Items offset"),
+) -> Pagination:
+    return Pagination(limit=limit, offset=offset)
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
         yield session
 
-async def get_current_user(db: AsyncSession = Depends(get_db), token: str = Depends(reusable_oauth2)):
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        token_data = TokenData(**payload)
-    except (JWTError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-        )
-    if token_data.sub is None or token_data.jti is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-        )
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> models.User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    token_data = verify_token(token, credentials_exception)
     if is_blacklisted(token_data.jti):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked",
-        )
-    db_user = await user.get(db, id=token_data.sub)
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-async def get_current_user_from_refresh_token(db: AsyncSession = Depends(get_db), token: str = Depends(reusable_oauth2)):
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        token_data = TokenData(**payload)
-    except (JWTError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials, refresh token invalid or expired",
-        )
-    if token_data.sub is None or token_data.jti is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials, refresh token invalid or expired",
-        )
-    if is_blacklisted(token_data.jti):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked",
-        )
-    db_user = await user.get(db, id=token_data.sub)
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+        raise credentials_exception
+    user = await crud.user.get(db, id=token_data.sub)
+    if user is None:
+        raise credentials_exception
+    return user

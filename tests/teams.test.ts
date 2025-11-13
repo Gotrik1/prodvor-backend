@@ -44,11 +44,11 @@ async function createSport(headers: { [key: string]: string }, name: string) {
     return response.json();
 }
 
-async function createTeam(headers: { [key: string]: string }, name: string, sportId: string) {
+async function createTeam(headers: { [key: string]: string }, name: string, game: string) {
   const response = await fetch(`${API_BASE_URL}/api/v1/teams`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ name, sport_id: sportId }),
+    body: JSON.stringify({ name, game }),
   });
   return response.json();
 }
@@ -74,7 +74,7 @@ describe('Teams API', () => {
     applicantId = applicant.userId;
 
     const sport = await createSport(captainHeaders, 'Team Test Sport');
-    const team = await createTeam(captainHeaders, 'Team Test', sport.id);
+    const team = await createTeam(captainHeaders, 'Team Test', sport.name);
     teamId = team.id;
   });
 

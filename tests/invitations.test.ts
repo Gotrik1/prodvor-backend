@@ -31,7 +31,7 @@ describe('Invitations API', () => {
   let player: { accessToken: string; id: any; };
   let teamId: any;
   let invitationId: any;
-  let sportId: any;
+  let sportName: any;
 
   beforeAll(async () => {
     captain = await createUser(`captain_${Date.now()}@example.com`, 'captain');
@@ -48,9 +48,9 @@ describe('Invitations API', () => {
             body: JSON.stringify({ name: 'Test Sport', description: 'A sport for testing' })
         });
         const newSport = await sportCreation.json();
-        sportId = newSport.id;
+        sportName = newSport.name;
     } else {
-        sportId = sports[0].id;
+        sportName = sports[0].name;
     }
 
     // Captain creates a team
@@ -60,7 +60,7 @@ describe('Invitations API', () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${captain.accessToken}`,
       },
-      body: JSON.stringify({ name: 'The Winners', sport_id: sportId, description: 'A winning team' }),
+      body: JSON.stringify({ name: 'The Winners', game: sportName, description: 'A winning team' }),
     });
     const teamData = await teamResponse.json();
     teamId = teamData.id;

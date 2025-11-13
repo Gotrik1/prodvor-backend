@@ -3,10 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import List
-from pydantic import BaseModel
 
 # Зависимости и CRUD
-from app.dependencies import get_db, get_current_user
+from app.dependencies import get_db, get_current_user, get_pagination, Pagination
 from app import crud
 from app.crud import crud_friend_request, crud_team, crud_user
 
@@ -18,11 +17,22 @@ from app.schemas.pagination import PaginatedResponse, PaginationMeta
 # Модели
 from app.models import FriendRequest, User as UserModel
 
+def serialize_user(user: UserModel):
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "nickname": user.nickname,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "birth_date": str(user.birth_date),
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+    }
+
 router = APIRouter()
 
 async def get_profile_buttons(db: AsyncSession, current_user_id: UUID, profile_owner: UserModel) -> list[ProfileButton]:
     buttons = []
-    # Simplified for brevity, original logic can be restored if needed
     if current_user_id == profile_owner.id:
         buttons.append(ProfileButton(action={"type": "edit_profile"}, text="Редактировать"))
     else:
@@ -44,22 +54,24 @@ async def read_user(user_id: UUID, db: AsyncSession = Depends(get_db), current_u
     user_profile.profile_buttons = await get_profile_buttons(db, current_user.id, user)
     return user_profile
 
-@router.get("/{user_id}/friends", response_model=PaginatedResponse[User], operation_id="listUserFriends")
-async def read_user_friends(
+@router.get("/{user_id}/friends")
+async def list_user_friends(
     user_id: UUID,
-    page: int = Query(1, ge=1, description="Номер страницы"),
-    per_page: int = Query(10, ge=1, le=100, description="Элементов на странице"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    pagination: Pagination = Depends(get_pagination),
 ):
-    user = await crud_user.user.get(db, id=user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    skip = (page - 1) * per_page
-    friends, total = await crud_friend_request.friend_request.get_friends_with_total(db, user_id=user.id, skip=skip, limit=per_page)
-    
-    meta = PaginationMeta(page=page, per_page=per_page, total=total, pages=(total + per_page - 1) // per_page)
-    return PaginatedResponse(data=friends, meta=meta)
+    friend_ids = await crud.friend_request.get_friend_ids(db, user_id=user_id)
+    total = len(friend_ids)
+
+    start = pagination.offset
+    end = start + pagination.limit
+    page_ids = friend_ids[start:end] if friend_ids else []
+
+    users = await crud.user.get_many_by_ids(db, page_ids)
+    return {
+        "meta": {"total": total, "limit": pagination.limit, "offset": pagination.offset},
+        "data": [serialize_user(u) for u in users],
+    }
 
 @router.get("/{user_id}/followers", response_model=PaginatedResponse[User], operation_id="listUserFollowers")
 async def read_user_followers(
@@ -68,15 +80,18 @@ async def read_user_followers(
     per_page: int = Query(10, ge=1, le=100, description="Элементов на странице"),
     db: AsyncSession = Depends(get_db)
 ):
-    # This functionality is not implemented, returning empty as per test expectations
     meta = PaginationMeta(page=page, per_page=per_page, total=0, pages=0)
     return PaginatedResponse(data=[], meta=meta)
 
-class FollowingResponse(BaseModel):
-    users: PaginatedResponse[User]
-    teams: PaginatedResponse[Team]
+class FollowingUsersResponse(PaginatedResponse[User]):
+    class Config:
+        from_attributes = True
 
-@router.get("/{user_id}/following", response_model=FollowingResponse, operation_id="listUserFollowing")
+class FollowingTeamsResponse(PaginatedResponse[Team]):
+    class Config:
+        from_attributes = True
+
+@router.get("/{user_id}/following", operation_id="listUserFollowing")
 async def read_user_following(
     user_id: UUID,
     page: int = Query(1, ge=1, description="Номер страницы"),
@@ -89,13 +104,11 @@ async def read_user_following(
 
     skip = (page - 1) * per_page
 
-    # User following is not implemented
-    meta_users = PaginationMeta(page=page, per_page=per_page, total=0, pages=0)
-    paginated_users = PaginatedResponse(data=[], meta=meta_users)
+    users, teams, total_users, total_teams = await crud_user.user.get_following_with_total(db, user_id=user.id, skip=skip, limit=per_page)
+    meta_users = PaginationMeta(page=page, per_page=per_page, total=total_users, pages=(total_users + per_page - 1) // per_page)
+    paginated_users = FollowingUsersResponse(data=users, meta=meta_users)
 
-    # Team following
-    followed_teams, total_teams = await crud_team.team.get_followed_teams_with_total(db, user_id=user.id, skip=skip, limit=per_page)
     meta_teams = PaginationMeta(page=page, per_page=per_page, total=total_teams, pages=(total_teams + per_page - 1) // per_page)
-    paginated_teams = PaginatedResponse(data=followed_teams, meta=meta_teams)
+    paginated_teams = FollowingTeamsResponse(data=teams, meta=meta_teams)
 
-    return FollowingResponse(users=paginated_users.model_dump(), teams=paginated_teams.model_dump())
+    return {"users": paginated_users, "teams": paginated_teams}

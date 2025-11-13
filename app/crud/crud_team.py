@@ -1,83 +1,137 @@
-from typing import Tuple, List, Optional
-from app.crud.base import CRUDBase
-from app.models.team import Team, team_followers
-from app.models.user import User
-from app.models.user_team import UserTeam 
-from app.schemas.team import TeamCreate, TeamUpdate
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy import func, and_
-import uuid
+from app.crud.base import CRUDBase
+from app.models.team import Team
+from app.models.team_application import TeamApplication
+from app.models.user_team import UserTeam
+from app.schemas.team import TeamCreate, TeamUpdate
+from fastapi import HTTPException
+from sqlalchemy import delete, select
+from sqlalchemy.orm import selectinload
+from typing import Any, List, Optional
+
 
 class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
-    async def create_with_captain(self, db: AsyncSession, *, obj_in: TeamCreate, captain_id: uuid.UUID) -> Team:
-        team_data = obj_in.model_dump()
-        new_team = self.model(
-            name=team_data['name'], 
-            sport_id=team_data['sport_id'],
-            captain_id=captain_id, 
-            city=team_data.get('city'), 
-            game=team_data.get('game')
+    async def get(self, db: AsyncSession, id: Any) -> Optional[Team]:
+        query = select(self.model).where(self.model.id == id).options(
+            selectinload(self.model.member_associations).selectinload(UserTeam.user)
         )
-        db.add(new_team)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_multi(
+        self, db: AsyncSession, *, skip: int = 0, limit: int = 100
+    ) -> List[Team]:
+        query = select(self.model).offset(skip).limit(limit).options(
+            selectinload(self.model.member_associations).selectinload(UserTeam.user)
+        )
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    
+    async def create_with_captain(self, db: AsyncSession, *, obj_in: TeamCreate, captain_id: UUID) -> Team:
+        """ 
+        Создает команду и делает пользователя капитаном
+        """
+        db_obj = self.model(**obj_in.dict(), captain_id=captain_id)
+        db.add(db_obj)
         await db.commit()
-        await db.refresh(new_team)
-        return new_team
 
-    async def get_followed_teams_with_total(self, db: AsyncSession, *, user_id: uuid.UUID, skip: int = 0, limit: int = 10) -> Tuple[List[Team], int]:
-        total_query = select(func.count()).select_from(team_followers).where(team_followers.c.user_id == user_id)
-        total_result = await db.execute(total_query)
-        total = total_result.scalar_one()
+        # Add captain as a team member
+        captain_member = UserTeam(user_id=captain_id, team_id=db_obj.id)
+        db.add(captain_member)
+        await db.commit()
 
-        if total == 0:
-            return [], 0
+        # Re-fetch the team with members eagerly loaded to satisfy the response_model and avoid MissingGreenlet
+        query = select(Team).where(Team.id == db_obj.id).options(
+            selectinload(Team.member_associations).selectinload(UserTeam.user)
+        )
+        result = await db.execute(query)
+        return result.scalar_one()
 
-        followed_team_ids_query = select(team_followers.c.team_id).where(team_followers.c.user_id == user_id).offset(skip).limit(limit)
-        followed_team_ids_result = await db.execute(followed_team_ids_query)
-        followed_team_ids = followed_team_ids_result.scalars().all()
-
-        if not followed_team_ids:
-            return [], total
-
-        teams_query = select(Team).where(Team.id.in_(followed_team_ids))
-        teams_result = await db.execute(teams_query)
-        teams = teams_result.scalars().all()
-        return teams, total
-
-    async def apply(self, db: AsyncSession, *, team_id: uuid.UUID, user_id: uuid.UUID):
-        pass
-
-    async def list_applications(self, db: AsyncSession, *, team_id: uuid.UUID, captain_id: uuid.UUID) -> List[User]:
-        return []
-
-    async def accept(self, db: AsyncSession, *, team_id: uuid.UUID, captain_id: uuid.UUID, user_id: uuid.UUID):
-        pass
-
-    async def decline(self, db: AsyncSession, *, team_id: uuid.UUID, captain_id: uuid.UUID, user_id: uuid.UUID):
-        pass
-
-    async def update_logo(self, db: AsyncSession, *, team_id: uuid.UUID, captain_id: uuid.UUID, logo_url: str) -> Optional[Team]:
-        team = await self.get(db, id=team_id)
-        if team and team.captain_id == captain_id:
-            team.logoUrl = logo_url
-            await db.commit()
-            await db.refresh(team)
-            return team
-        return None
-
-    async def remove_member(self, db: AsyncSession, *, team_id: uuid.UUID, captain_id: uuid.UUID, user_id: uuid.UUID):
-        team = await self.get(db, id=team_id)
-        if not team or team.captain_id != captain_id:
-            return
+    async def apply(self, db: AsyncSession, *, team_id: UUID, user_id: UUID):
+        # Проверяем, что команда существует
+        team = await self.get(db, team_id)
+        if not team:
+            raise HTTPException(status_code=404, detail="Team not found")
         
-        if captain_id == user_id:
-            return
+        # Проверяем, что пользователь уже не в команде
+        member_query = await db.execute(select(UserTeam).where(UserTeam.team_id == team_id, UserTeam.user_id == user_id))
+        if member_query.scalars().first():
+            raise HTTPException(status_code=400, detail="User is already in the team")
 
-        stmt = UserTeam.__table__.delete().where(
-            and_(UserTeam.team_id == team_id, UserTeam.user_id == user_id)
-        )
-        await db.execute(stmt)
+        # Проверяем, что пользователь еще не подал заявку
+        application_query = await db.execute(select(TeamApplication).where(TeamApplication.team_id == team_id, TeamApplication.user_id == user_id))
+        if application_query.scalars().first():
+            raise HTTPException(status_code=400, detail="User has already applied to the team")
+
+        # Создаем заявку
+        application = TeamApplication(team_id=team_id, user_id=user_id)
+        db.add(application)
         await db.commit()
 
+    async def list_applications(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID):
+        team = await self.get(db, team_id)
+        if not team or team.captain_id != captain_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        applications_query = await db.execute(select(TeamApplication).where(TeamApplication.team_id == team_id).options(selectinload(TeamApplication.user)))
+        return applications_query.scalars().all()
+
+    async def accept(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+        team = await self.get(db, team_id)
+        if not team or team.captain_id != captain_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        # Находим и удаляем заявку
+        application_query = await db.execute(select(TeamApplication).where(TeamApplication.team_id == team_id, TeamApplication.user_id == user_id))
+        application = application_query.scalars().first()
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+        
+        await db.delete(application)
+
+        # Добавляем в команду
+        new_member = UserTeam(team_id=team_id, user_id=user_id)
+        db.add(new_member)
+        await db.commit()
+
+    async def decline(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+        team = await self.get(db, team_id)
+        if not team or team.captain_id != captain_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        # Находим и удаляем заявку
+        application_query = await db.execute(select(TeamApplication).where(TeamApplication.team_id == team_id, TeamApplication.user_id == user_id))
+        application = application_query.scalars().first()
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+        
+        await db.delete(application)
+        await db.commit()
+
+    async def update_logo(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, logo_url: str) -> Team:
+        team = await self.get(db, team_id)
+        if not team or team.captain_id != captain_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        team.logoUrl = logo_url
+        await db.commit()
+        await db.refresh(team)
+        return team
+
+    async def remove_member(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+        team = await self.get(db, team_id)
+        if not team or team.captain_id != captain_id:
+            raise HTTPException(status_code=403, detail="Not authorized to remove members")
+
+        if captain_id == user_id:
+            raise HTTPException(status_code=400, detail="Captain cannot remove themselves")
+
+        # Находим и удаляем участника
+        member_query = await db.execute(delete(UserTeam).where(UserTeam.team_id == team_id, UserTeam.user_id == user_id))
+        if member_query.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Member not found in the team")
+            
+        await db.commit()
 
 team = CRUDTeam(Team)

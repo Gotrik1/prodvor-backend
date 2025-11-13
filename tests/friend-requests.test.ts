@@ -81,7 +81,7 @@ describe('Friend Requests API', () => {
     });
     const friends1_body = await friends1_response.json();
     expect(friends1_response.status).toBe(200);
-    expect(friends1_body.some((friend: any) => friend.id === user2.id)).toBe(true);
+    expect(friends1_body.data.some((friend: any) => friend.id === user2.id)).toBe(true);
 
     // Check user2's friends
     const friends2_response = await fetch(`${API_BASE_URL}/api/v1/friend-requests/friends`, {
@@ -89,7 +89,7 @@ describe('Friend Requests API', () => {
     });
     const friends2_body = await friends2_response.json();
     expect(friends2_response.status).toBe(200);
-    expect(friends2_body.some((friend: any) => friend.id === user1.id)).toBe(true);
+    expect(friends2_body.data.some((friend: any) => friend.id === user1.id)).toBe(true);
   });
 
   test('PUT /api/v1/friend-requests/{request_id}/decline - should decline a friend request', async () => {
