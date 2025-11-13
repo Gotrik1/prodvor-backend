@@ -135,25 +135,24 @@ describe('Teams API', () => {
     expect(body.logoUrl).toBe(newLogoUrl);
   });
 
-  test('POST /api/v1/teams/{team_id}/follow - player should follow the team', async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/teams/${teamId}/follow`, {
+  test('POST /api/v1/teams/{team_id}/follow - should toggle follow status', async () => {
+    // 1. Follow the team
+    const followResponse = await fetch(`${API_BASE_URL}/api/v1/teams/${teamId}/follow`, {
       method: 'POST',
       headers: playerHeaders,
     });
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.isFollowing).toBe(true);
-  });
-  
-  test('POST /api/v1/teams/{team_id}/follow - player should unfollow the team', async () => {
-    await fetch(`${API_BASE_URL}/api/v1/teams/${teamId}/follow`, { method: 'POST', headers: playerHeaders });
-    const response = await fetch(`${API_BASE_URL}/api/v1/teams/${teamId}/follow`, {
+    expect(followResponse.status).toBe(200);
+    const followBody = await followResponse.json();
+    expect(followBody.isFollowing).toBe(true);
+
+    // 2. Unfollow the team
+    const unfollowResponse = await fetch(`${API_BASE_URL}/api/v1/teams/${teamId}/follow`, {
       method: 'POST',
       headers: playerHeaders,
     });
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.isFollowing).toBe(false);
+    expect(unfollowResponse.status).toBe(200);
+    const unfollowBody = await unfollowResponse.json();
+    expect(unfollowBody.isFollowing).toBe(false);
   });
 
   test('DELETE /api/v1/teams/{team_id}/members/{user_id} - captain should remove a member', async () => {

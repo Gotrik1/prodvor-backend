@@ -29,14 +29,15 @@ async def subscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> None:
     await db.commit()
 
 
-async def unsubscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> None:
-    await db.execute(
+async def unsubscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> int:
+    result = await db.execute(
         delete(Subscription).where(
             Subscription.user_id == user_id,
             Subscription.team_id == team_id,
         )
     )
     await db.commit()
+    return result.rowcount
 
 
 async def toggle(db: AsyncSession, user_id: UUID, team_id: UUID) -> bool:
@@ -45,11 +46,10 @@ async def toggle(db: AsyncSession, user_id: UUID, team_id: UUID) -> bool:
     True  – пользователь теперь подписан
     False – пользователь теперь отписан
     """
-    currently_subscribed = await is_subscribed(db, user_id, team_id)
+    deleted_count = await unsubscribe(db, user_id, team_id)
 
-    if currently_subscribed:
-        await unsubscribe(db, user_id, team_id)
-        return False
+    if deleted_count > 0:
+        return False  # Успешно отписались
     else:
         await subscribe(db, user_id, team_id)
-        return True
+        return True  # Подписки не было, поэтому подписались

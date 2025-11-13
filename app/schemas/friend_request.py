@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.friend_request import FriendRequestStatus
 
 
@@ -11,7 +11,7 @@ class FriendRequestBase(BaseModel):
 
 
 class FriendRequestCreate(FriendRequestBase):
-    receiver_id: UUID
+    receiver_id: UUID = Field(validation_alias='to_user_id')
 
 
 class FriendRequestUpdate(FriendRequestBase):
