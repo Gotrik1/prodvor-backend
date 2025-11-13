@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from sqlalchemy import select, delete
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.subscription import Subscription
@@ -19,7 +20,12 @@ async def is_subscribed(db: AsyncSession, user_id: UUID, team_id: UUID) -> bool:
 
 
 async def subscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> None:
-    db.add(Subscription(user_id=user_id, team_id=team_id))
+    stmt = (
+        pg_insert(Subscription)
+        .values(user_id=user_id, team_id=team_id)
+        .on_conflict_do_nothing(index_elements=["user_id", "team_id"])
+    )
+    await db.execute(stmt)
     await db.commit()
 
 
