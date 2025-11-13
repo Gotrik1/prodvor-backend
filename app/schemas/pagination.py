@@ -13,3 +13,7 @@ class PaginationMeta(BaseModel):
 class PaginatedResponse(BaseModel, Generic[T]):
     data: List[T] = Field(..., description="Список элементов")
     meta: PaginationMeta = Field(..., description="Мета-информация о пагинации")
+
+class Pagination(BaseModel):
+    offset: int = 0
+    limit: int = 100

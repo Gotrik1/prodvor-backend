@@ -1,26 +1,34 @@
-from pydantic import BaseModel, ConfigDict
-import uuid
 from datetime import datetime
+from typing import Optional, Any
+from uuid import UUID
 
-# Schema for creating a friend request. Client only needs to provide the receiver's ID.
-class FriendRequestCreate(BaseModel):
-    receiver_id: uuid.UUID
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from app.models.friend_request import FriendRequestStatus
 
-# Schema for updating a friend request. This is mostly for internal use, 
-# as status updates are handled by specific endpoints (accept/decline).
-class FriendRequestUpdate(BaseModel):
-    status: str
 
-# Base schema for a friend request object retrieved from the database.
-class FriendRequestInDBBase(BaseModel):
-    id: uuid.UUID
-    requester_id: uuid.UUID
-    receiver_id: uuid.UUID
-    status: str
+class FriendRequestBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class FriendRequestCreate(FriendRequestBase):
+    receiver_id: UUID = Field(alias="receiverId")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_receiver_id(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "receiverId" in data and "receiver_id" not in data:
+                data["receiver_id"] = data["receiverId"]
+        return data
+
+
+class FriendRequestUpdate(FriendRequestBase):
+    status: Optional[FriendRequestStatus] = None
+
+
+class FriendRequest(FriendRequestBase):
+    id: UUID
+    requester_id: UUID
+    receiver_id: UUID
+    status: FriendRequestStatus
     created_at: datetime
-    updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)
-
-# Public-facing schema for a friend request, to be returned by the API.
-class FriendRequest(FriendRequestInDBBase):
-    pass

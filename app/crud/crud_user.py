@@ -2,7 +2,7 @@
 import math
 from typing import Optional, List, Tuple
 import uuid
-from sqlalchemy import func, or_, and_, delete, select
+from sqlalchemy import func, or_, and_, delete, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -44,45 +44,48 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             return None
         return user
 
-    async def list_friends(self, db, user_id: uuid.UUID) -> list[User]:
-        q = (
-            select(User)
-            .where(
-                or_(
-                    and_(
-                        FriendRequest.requester_id == user_id,
-                        User.id == FriendRequest.receiver_id,
-                    ),
-                    and_(
-                        FriendRequest.receiver_id == user_id,
-                        User.id == FriendRequest.requester_id,
-                    ),
-                ),
-            )
-            .join(FriendRequest, or_(
-                FriendRequest.requester_id == User.id,
-                FriendRequest.receiver_id == User.id,
-            ))
-            .where(FriendRequest.status == 'accepted')
-        )
-        res = await db.execute(q)
-        return list(res.scalars().unique())
+    async def get_friends_with_total(
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[list[User], int]:
+        fr = FriendRequest
+        u = User
 
-    async def are_friends(self, db, user1_id: str, user2_id: str) -> bool:
-        q = select(FriendRequest).where(
-            or_(
-                and_(FriendRequest.requester_id == user1_id, FriendRequest.receiver_id == user2_id),
-                and_(FriendRequest.requester_id == user2_id, FriendRequest.receiver_id == user1_id),
-            ),
-            FriendRequest.status == 'accepted',
+        friend_id_case = case(
+            (fr.requester_id == user_id, fr.receiver_id),
+            else_=fr.requester_id
         )
-        res = await db.execute(q)
-        return res.scalar_one_or_none() is not None
+
+        # Subquery to get friend IDs
+        friend_ids_subquery = select(friend_id_case.label('friend_id')).where(
+            and_(
+                fr.status == 'accepted',
+                or_(fr.requester_id == user_id, fr.receiver_id == user_id)
+            )
+        ).alias('friend_ids')
+
+        # Query to get the total count of friends
+        total_query = select(func.count()).select_from(friend_ids_subquery)
+        total_result = await db.execute(total_query)
+        total = total_result.scalar_one()
+
+        # Query to get the list of friends with pagination
+        friends_query = select(u).join(
+            friend_ids_subquery, u.id == friend_ids_subquery.c.friend_id
+        ).offset(skip).limit(limit)
+
+        friends_result = await db.execute(friends_query)
+        friends = list(friends_result.scalars().all())
+
+        return friends, total
 
     async def get_followers_with_total(self, db: AsyncSession, *, user_id: uuid.UUID, skip: int = 0, limit: int = 10) -> Tuple[List[User], int]:
         return [], 0
 
-    async def get_following_with_total(self, db: AsyncSession, *, user_id: uuid.UUID, skip: int = 0, limit: int = 10) -> Tuple[List[User], List[Team], int, int]:
+    async def get_following_with_total(self, db: AsyncSession, *, user_id: uuid.UUID, skip: int = 0, limit: int = 10) -> Tuple[List[Team], int]:
         ids_res = await db.execute(
             select(Subscription.team_id).where(Subscription.user_id == user_id)
         )
@@ -103,71 +106,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             )
             teams = teams_res.scalars().unique().all()
 
-        return [], teams, 0, total
-    
-    async def is_following_team(self, db: AsyncSession, *, user_id: uuid.UUID, team_id: uuid.UUID) -> bool:
-        result = await db.execute(
-            select(Subscription).filter(
-                and_(
-                    Subscription.user_id == user_id,
-                    Subscription.team_id == team_id
-                )
-            )
-        )
-        return result.scalars().first() is not None
-
-    async def follow_team(self, db: AsyncSession, *, user_id: uuid.UUID, team_id: uuid.UUID) -> None:
-        # This logic is now a toggle in the router, but leaving the basic function here
-        if not await self.is_following_team(db, user_id=user_id, team_id=team_id):
-            subscription = Subscription(user_id=user_id, team_id=team_id)
-            db.add(subscription)
-            await db.commit()
-
-    async def unfollow_team(self, db: AsyncSession, *, user_id: uuid.UUID, team_id: uuid.UUID) -> None:
-        stmt = delete(Subscription).where(
-            and_(
-                Subscription.user_id == user_id,
-                Subscription.team_id == team_id
-            )
-        )
-        await db.execute(stmt)
-        await db.commit()
-
-    async def get_friends_with_total(
-        self,
-        db: AsyncSession,
-        user_id: uuid.UUID,
-        skip: int = 0,
-        limit: int = 20,
-    ) -> tuple[list[User], int]:
-        fr = FriendRequest
-        u = User
-
-        friend_ids_subq = (
-            select(
-                func.coalesce(
-                    func.nullif(fr.receiver_id, user_id),
-                    fr.requester_id
-                ).label("friend_id")
-            )
-            .where(
-                fr.status == "accepted",
-                or_(fr.requester_id == user_id, fr.receiver_id == user_id),
-            )
-        ).subquery()
-
-        total_q = select(func.count()).select_from(friend_ids_subq)
-        total = (await db.execute(total_q)).scalar_one()
-
-        friends_q = (
-            select(u)
-            .where(u.id.in_(select(friend_ids_subq.c.friend_id)))
-            .offset(skip)
-            .limit(limit)
-        )
-        friends = (await db.execute(friends_q)).scalars().all()
-
-        return friends, total
+        return teams, total
 
     async def get_many_by_ids(self, db: AsyncSession, ids: List[uuid.UUID]) -> List[User]:
         if not ids:

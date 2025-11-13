@@ -1,5 +1,5 @@
 from .event import Event, EventCreate, EventUpdate
-from .user import User, UserCreate, UserUpdate
+from .user import User, UserCreate, UserUpdate, UserProfile
 from .team import Team, TeamCreate, TeamUpdate
 from .sport import Sport, SportCreate, SportUpdate
 from .user_event import UserEvent, UserEventCreate, UserEventUpdate

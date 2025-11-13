@@ -3,12 +3,22 @@ import math
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud, models, schemas
-from app.dependencies import get_db, get_current_user
+from app.dependencies import get_db, get_current_user, get_pagination, Pagination
 from app.schemas.pagination import PaginatedResponse
 import uuid
 from app.models.friend_request import FriendRequestStatus
 
 router = APIRouter()
+
+def serialize_user(user: models.User) -> dict:
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "nickname": user.nickname,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "birth_date": str(user.birth_date),
+    }
 
 @router.post("", response_model=schemas.FriendRequest)
 async def create_friend_request(
@@ -34,6 +44,31 @@ async def get_received_friend_requests(
     current_user: models.User = Depends(get_current_user)
 ):
     return await crud.friend_request.get_received(db=db, user_id=current_user.id)
+
+@router.get("/friends")
+async def get_friends(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    pagination: Pagination = Depends(get_pagination),
+):
+    # Все id друзей текущего пользователя
+    friend_ids = await crud.friend_request.get_friend_ids(db, user_id=current_user.id)
+
+    total = len(friend_ids)
+    start = pagination.offset
+    end = start + pagination.limit
+    page_ids = friend_ids[start:end]
+
+    friends = await crud.user.get_many_by_ids(db, page_ids)
+
+    return {
+        "meta": {
+            "total": total,
+            "limit": pagination.limit,
+            "offset": pagination.offset,
+        },
+        "data": [serialize_user(u) for u in friends],
+    }
 
 @router.put("/{request_id}/accept", response_model=schemas.FriendRequest)
 async def accept_friend_request(

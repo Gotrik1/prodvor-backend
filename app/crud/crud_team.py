@@ -4,9 +4,10 @@ from app.crud.base import CRUDBase
 from app.models.team import Team
 from app.models.team_application import TeamApplication
 from app.models.user_team import UserTeam
+from app.models.subscription import Subscription
 from app.schemas.team import TeamCreate, TeamUpdate
 from fastapi import HTTPException
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, and_
 from sqlalchemy.orm import selectinload
 from typing import Any, List, Optional
 
@@ -133,5 +134,23 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
             raise HTTPException(status_code=404, detail="Member not found in the team")
             
         await db.commit()
+
+    async def toggle_follow(self, db: AsyncSession, *, team_id: UUID, user_id: UUID) -> bool:
+        result = await db.execute(
+            select(Subscription).where(
+                Subscription.user_id == user_id, Subscription.team_id == team_id
+            )
+        )
+        subscription = result.scalar_one_or_none()
+
+        if subscription:
+            await db.delete(subscription)
+            await db.commit()
+            return False
+        else:
+            new_sub = Subscription(user_id=user_id, team_id=team_id)
+            db.add(new_sub)
+            await db.commit()
+            return True
 
 team = CRUDTeam(Team)

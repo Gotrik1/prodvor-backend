@@ -6,7 +6,7 @@ from uuid import UUID
 
 from app import crud, models, schemas
 from app.dependencies import get_db, get_current_user
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, delete
 from app.models.subscription import Subscription
 from app.models.team import Team
 from app.models.user import User
@@ -94,10 +94,24 @@ async def toggle_follow_team(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    is_following = await crud.subscription.toggle_subscription(
-        db, user_id=current_user.id, team_id=team_id
+    result = await db.execute(
+        delete(Subscription).where(
+            and_(
+                Subscription.user_id == current_user.id,
+                Subscription.team_id == team_id
+            )
+        )
     )
-    return {"isFollowing": is_following}
+
+    if result.rowcount == 0:
+        new_sub = Subscription(user_id=current_user.id, team_id=team_id)
+        db.add(new_sub)
+        await db.commit()
+        return {"isFollowing": True}
+    
+    await db.commit()
+    return {"isFollowing": False}
+
 
 @router.post("/{team_id}/logo", response_model=schemas.team.Team)
 async def update_team_logo(

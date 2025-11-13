@@ -1,7 +1,7 @@
 # app/crud/crud_friend_request.py
 from uuid import UUID
 from typing import Optional, List
-from sqlalchemy import select, or_, and_, union_all, distinct
+from sqlalchemy import select, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.base import CRUDBase
 from app.models import FriendRequest, User
@@ -25,7 +25,7 @@ class CRUDFriendRequest(CRUDBase[FriendRequest, FriendRequestCreate, FriendReque
     async def create_with_requester(
         self, db: AsyncSession, *, obj_in: FriendRequestCreate, requester_id: UUID
     ) -> FriendRequest:
-        db_obj = self.model(**obj_in.model_dump(), requester_id=requester_id)
+        db_obj = self.model(receiver_id=obj_in.receiver_id, requester_id=requester_id)
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
@@ -37,20 +37,27 @@ class CRUDFriendRequest(CRUDBase[FriendRequest, FriendRequestCreate, FriendReque
         )
         return result.scalars().all()
     
-    async def get_friend_ids(self, db: AsyncSession, *, user_id: UUID) -> list[UUID]:
-        accepted = FriendRequestStatus.accepted
+    async def get_friend_ids(self, db: AsyncSession, *, user_id: UUID) -> List[UUID]:
+        stmt = (
+            select(self.model.requester_id, self.model.receiver_id)
+            .where(
+                or_(
+                    self.model.requester_id == user_id,
+                    self.model.receiver_id == user_id,
+                ),
+                self.model.status == FriendRequestStatus.accepted,
+            )
+        )
 
-        q1 = select(FriendRequest.receiver_id.label("friend_id")).where(
-            FriendRequest.requester_id == user_id, FriendRequest.status == accepted
-        )
-        q2 = select(FriendRequest.requester_id.label("friend_id")).where(
-            FriendRequest.receiver_id == user_id, FriendRequest.status == accepted
-        )
-        
-        union_stmt = union_all(q1, q2)
-        stmt = select(distinct(union_stmt.c.friend_id))
-        
         result = await db.execute(stmt)
-        return result.scalars().all()
+        friend_ids = set()
+        for requester_id, receiver_id in result.all():
+            if requester_id == user_id:
+                friend_ids.add(receiver_id)
+            else:
+                friend_ids.add(requester_id)
+        
+        return list(friend_ids)
+
 
 friend_request = CRUDFriendRequest(FriendRequest)
