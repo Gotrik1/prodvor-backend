@@ -13,7 +13,7 @@ from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.subscription import Subscription
 from app.models.user_team import UserTeam
 from app.schemas.user import UserCreate, UserUpdate
-from app.utils.security import get_password_hash, verify_password
+from app.core.security import get_password_hash, verify_password
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     async def get_by_email(self, db: AsyncSession, *, email: str) -> Optional[User]:

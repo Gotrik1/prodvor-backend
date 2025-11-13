@@ -6,9 +6,8 @@ from pydantic import BaseModel
 
 from app import crud, models
 from app.db.session import SessionLocal
-from app.schemas.token import TokenData
-from app.utils.token import verify_token
-from app.utils.blacklist import is_blacklisted
+from app.core import security
+from app.core.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -32,9 +31,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token_data = verify_token(token, credentials_exception)
-    if is_blacklisted(token_data.jti):
-        raise credentials_exception
+    
+    token_data = security.verify_token(
+        token=token,
+        secret_key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+        credentials_exception=credentials_exception
+    )
+
     user = await crud.user.get(db, id=token_data.sub)
     if user is None:
         raise credentials_exception

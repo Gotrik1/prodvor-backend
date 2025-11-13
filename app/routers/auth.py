@@ -1,23 +1,18 @@
-import uuid
-from datetime import datetime, timedelta
-from typing import Any, List, Optional, Union
+from datetime import timedelta
+from typing import Any
 
-import jwt
-from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import crud, models, schemas
 from app.dependencies import get_current_user, get_db, oauth2_scheme
-from app.schemas.token import Msg, TokenPayload
-from app.utils.token import create_access_token, create_refresh_token, ALGORITHM, verify_token
-from app.utils.blacklist import add_to_blacklist
-
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
-REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30 # 30 days
-
+from app.schemas.token import Msg
+from app.core import security
+from app.core.config import settings
 
 router = APIRouter()
+
 
 @router.post("/login", response_model=schemas.token.Token)
 async def login(
@@ -32,10 +27,21 @@ async def login(
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-    access_token = create_access_token(
-        user.id, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=user.id,
+        secret_key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+        expires_delta=access_token_expires
     )
-    refresh_token = create_refresh_token(user.id)
+    
+    refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    refresh_token = security.create_refresh_token(
+        subject=user.id,
+        secret_key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+        expires_delta=refresh_token_expires
+    )
 
     return {
         "access_token": access_token,
@@ -43,25 +49,31 @@ async def login(
         "token_type": "bearer",
     }
 
+
 @router.post("/logout", response_model=Msg)
-async def logout(
-    token: str = Depends(oauth2_scheme),
-) -> Any:
+async def logout(token: str = Depends(oauth2_scheme)) -> Any:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token_data = verify_token(token, credentials_exception)
-    add_to_blacklist(token_data.jti)
-    return {"msg": "Successfully logged out"}
+    try:
+        payload = security.verify_token(
+            token=token, 
+            secret_key=settings.SECRET_KEY, 
+            algorithm=settings.ALGORITHM, 
+            credentials_exception=credentials_exception
+        )
+        # Add token to blacklist
+        security.add_to_blacklist(payload.jti)
+        return {"msg": "Successfully logged out"}
+    except Exception:
+        raise credentials_exception
 
 
 @router.post("/register", response_model=schemas.user.User)
 async def register(
-    *, 
-    db: AsyncSession = Depends(get_db), 
-    user_in: schemas.user.UserCreate
+    *, db: AsyncSession = Depends(get_db), user_in: schemas.user.UserCreate
 ) -> Any:
     """
     Create new user.
@@ -77,13 +89,22 @@ async def register(
 
 
 @router.post("/refresh", response_model=schemas.token.Token)
-async def refresh_token(
-    current_user: models.User = Depends(get_current_user),
-) -> Any:
-    access_token = create_access_token(
-        current_user.id, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+async def refresh_token(current_user: models.User = Depends(get_current_user)) -> Any:
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=current_user.id, 
+        secret_key=settings.SECRET_KEY, 
+        algorithm=settings.ALGORITHM,
+        expires_delta=access_token_expires
     )
-    refresh_token = create_refresh_token(current_user.id)
+    
+    refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    refresh_token = security.create_refresh_token(
+        subject=current_user.id, 
+        secret_key=settings.SECRET_KEY, 
+        algorithm=settings.ALGORITHM,
+        expires_delta=refresh_token_expires
+    )
 
     return {
         "access_token": access_token,
