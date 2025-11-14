@@ -1,20 +1,23 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+
+from pydantic import BaseModel
+from typing import Optional
+import uuid
+
 
 class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
-class TokenPayload(BaseModel):
-    sub: str
-    exp: int
-    jti: str
-    iss: Optional[str] = None
-    aud: Optional[str] = None
-    scope: Optional[List[str]] = Field(default=None)
-
-TokenData = TokenPayload
 
 class Msg(BaseModel):
     msg: str
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+# Единая и правильная модель для данных токена
+class TokenPayload(BaseModel):
+    sub: Optional[uuid.UUID] = None
+    jti: Optional[str] = None

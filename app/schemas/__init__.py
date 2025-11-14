@@ -16,4 +16,4 @@ from .comment import Comment, CommentCreate, CommentUpdate
 from .like import Like, LikeCreate, LikeUpdate, LikeCreateRequest, LikeCount
 from .invitation import Invitation, InvitationCreate, InvitationUpdate
 from .friend_request import FriendRequest, FriendRequestCreate, FriendRequestUpdate
-from .token import Token, TokenPayload, TokenData
+from .token import Token, RefreshTokenRequest, Msg

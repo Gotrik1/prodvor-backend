@@ -10,6 +10,7 @@ describe('Contract Tests', () => {
   let enforcer: any;
   let accessToken: string;
   let currentUserId: string;
+  let userNickname: string;
 
   beforeAll(async () => {
     const response = await fetch(`${API_BASE_URL}/openapi.json`);
@@ -20,6 +21,7 @@ describe('Contract Tests', () => {
 
     const email = `testuser_${Date.now()}@example.com`;
     const password = 'testpassword';
+    userNickname = email.split('@')[0];
 
     await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
       method: 'POST',
@@ -29,7 +31,6 @@ describe('Contract Tests', () => {
       body: JSON.stringify({ 
         email,
         password,
-        nickname: 'testuser',
         first_name: 'Test',
         last_name: 'User',
        })
@@ -81,7 +82,7 @@ describe('Contract Tests', () => {
     // Basic validation without the enforcer to avoid date issues.
     expect(response.status).toBe(200);
     expect(body.id).toBe(currentUserId);
-    expect(body.nickname).toBe('testuser');
+    expect(body.nickname).toBe(userNickname);
   });
 
   test('POST /api/v1/sports - should create a new sport', async () => {
