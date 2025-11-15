@@ -1,43 +1,41 @@
+# clear_db.py
 import asyncio
-from sqlalchemy import text
-from app.db.session import engine
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.sql import text
+from app.core.config import settings
 
 async def main():
     """
-    Connects to the database, drops all tables, and properly disposes of the engine.
+    Connects to the database, drops the public schema, recreates it,
+    and properly disposes of the engine.
+    This ensures a completely clean environment.
     """
-    print("Connecting to the database to drop all tables...")
+    print("Connecting to the database to wipe the public schema...")
+    # Connect to the database
+    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+
     async with engine.connect() as conn:
         try:
-            await conn.begin()
-            print("Dropping all tables in public schema...")
-            await conn.execute(text("""
-                DO $$
-                DECLARE
-                    r RECORD;
-                BEGIN
-                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-                        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-                    END LOOP;
-                END$$;
-            """))
-            await conn.execute(text("DROP TABLE IF EXISTS alembic_version CASCADE"))
-            await conn.commit()
-            print("All tables dropped successfully.")
-        except Exception as e:
-            await conn.rollback()
-            print(f"An error occurred while dropping tables: {e}")
-            raise
+            print("Dropping public schema...")
+            # Use CASCADE to drop all objects within the schema
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+            print("Public schema dropped.")
 
-    # Dispose of the engine after all operations are complete
+            print("Creating public schema...")
+            await conn.execute(text("CREATE SCHEMA public"))
+            print("Public schema created.")
+
+        except Exception as e:
+            print(f"An error occurred during schema wipe and recreate: {e}")
+        finally:
+            # It's important to close the connection in the pool
+            await conn.close()
+
     print("Disposing database engine...")
     await engine.dispose()
     print("Engine disposed.")
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        print(f"Script failed with error: {e}")
-        # Ensure engine is disposed even if main fails
-        asyncio.run(engine.dispose())
+    print("Wiping the public schema...")
+    asyncio.run(main())
+    print("Schema wipe complete.")

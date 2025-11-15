@@ -10,11 +10,17 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     birth_date: Optional[date] = None
+    avatar_url: Optional[str] = None
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     email: EmailStr
     password: str
+
+# Схема для создания пользователя в БД (с хешированным паролем)
+class UserCreateDB(UserBase):
+    email: EmailStr
+    password: str # В данном контексте это уже хешированный пароль
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):

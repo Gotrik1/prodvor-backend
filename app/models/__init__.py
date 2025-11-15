@@ -1,26 +1,18 @@
 # app/models/__init__.py
 from .user import User
-from .player_profile import PlayerProfile
-from .referee_profile import RefereeProfile
-from .coach_profile import CoachProfile
+from .team import Team, team_followers
 from .session import Session
-from .team import Team
-from .team_application import TeamApplication
 from .sport import Sport
-from .event import Event
-from .user_event import UserEvent
 from .user_team import UserTeam
-from .sport_event import SportEvent
+from .invitation import Invitation
 from .team_event import TeamEvent
-from .user_favorite_sport import UserFavoriteSport
-from .notification import Notification
-from .subscription import Subscription
-from .friend_request import FriendRequest
 from .post import Post
+from .lfg import LFG
 from .comment import Comment
 from .like import Like
-from .invitation import Invitation
-from .user_settings import UserSettings
-from .user_privacy_settings import UserPrivacySettings
-from .lfg import LFG
+from .playground import Playground
 from .sponsor import Sponsor
+from .friend_request import FriendRequest
+from .subscription import Subscription
+from .notification import Notification, NotificationType
+from .team_application import TeamApplication

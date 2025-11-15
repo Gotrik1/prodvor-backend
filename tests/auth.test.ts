@@ -1,5 +1,5 @@
 // tests/auth.test.ts
-import { test, expect, describe } from 'bun:test';
+import { test, expect, describe } from '@jest/globals'; // ИЗМЕНЕНО
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:8080';
 
