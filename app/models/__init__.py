@@ -2,6 +2,8 @@
 from .user import User
 from .team import Team, team_followers
 from .session import Session
+from .event import Event
+from .sport_event import SportEvent
 from .sport import Sport
 from .user_team import UserTeam
 from .invitation import Invitation
@@ -16,3 +18,10 @@ from .friend_request import FriendRequest
 from .subscription import Subscription
 from .notification import Notification, NotificationType
 from .team_application import TeamApplication
+from .user_event import UserEvent
+from .coach_profile import CoachProfile
+from .player_profile import PlayerProfile
+from .referee_profile import RefereeProfile
+from .user_favorite_sport import UserFavoriteSport
+from .user_settings import UserSettings
+from .user_privacy_settings import UserPrivacySettings

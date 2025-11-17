@@ -59,7 +59,7 @@ async def read_user_followers(
     db: AsyncSession = Depends(get_db),
     pagination: Pagination = Depends(get_pagination),
 ):
-    followers, total = await crud.user.get_followers_with_total(
+    followers, total = await crud.friend_request.get_followers_with_total(
         db, user_id=user_id, skip=pagination.offset, limit=pagination.limit
     )
     return {

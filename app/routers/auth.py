@@ -42,9 +42,9 @@ async def login(
 
 @router.post("/refresh", response_model=Token)
 async def refresh(
+    token_request: RefreshTokenRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    token_request: RefreshTokenRequest = Depends(),
 ) -> Token:
     user_agent = request.headers.get("user-agent", "unknown")
     ip_address = request.client.host
@@ -57,8 +57,8 @@ async def refresh(
 
 @router.post("/logout")
 async def logout(
+    token_request: RefreshTokenRequest,
     db: AsyncSession = Depends(get_db), 
-    token_request: RefreshTokenRequest = Depends()
 ) -> Response:
     await auth_service.logout(db, refresh_token=token_request.refresh_token)
     return Response(status_code=200, content="Successfully logged out")

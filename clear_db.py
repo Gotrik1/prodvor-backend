@@ -6,13 +6,12 @@ from app.core.config import settings
 
 async def main():
     """
-    Connects to the database, drops the public schema, recreates it,
-    and properly disposes of the engine.
+    Connects to the database, drops the public schema, and recreates it. 
     This ensures a completely clean environment.
     """
     print("Connecting to the database to wipe the public schema...")
-    # Connect to the database
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    # Connect to the database with a separate engine for administrative tasks
+    engine = create_async_engine(settings.DATABASE_URL.replace("/postgres", "/postgres"), echo=False)
 
     async with engine.connect() as conn:
         try:
@@ -28,7 +27,6 @@ async def main():
         except Exception as e:
             print(f"An error occurred during schema wipe and recreate: {e}")
         finally:
-            # It's important to close the connection in the pool
             await conn.close()
 
     print("Disposing database engine...")

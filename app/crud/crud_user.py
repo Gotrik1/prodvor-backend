@@ -28,7 +28,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         # Запрос для получения команд, на которые подписан пользователь
         query = (
             select(Team)
-            .join(team_followers)
+            .join(team_followers, Team.id == team_followers.c.team_id)  # Explicit join condition
             .where(team_followers.c.user_id == user_id)
             .offset(skip)
             .limit(limit)

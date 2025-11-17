@@ -59,7 +59,7 @@ async def get_friends(
     end = start + pagination.limit
     page_ids = friend_ids[start:end]
 
-    friends = await crud.user.get_many_by_ids(db, page_ids)
+    friends = await crud.user.get_many_by_ids(db, ids=page_ids)
 
     return {
         "meta": {

@@ -1,7 +1,7 @@
 # app/crud/crud_friend_request.py
 from uuid import UUID
 from typing import Optional, List
-from sqlalchemy import select, or_, and_, delete
+from sqlalchemy import select, or_, and_, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.base import CRUDBase
 from app.models import FriendRequest, User
@@ -59,5 +59,28 @@ class CRUDFriendRequest(CRUDBase[FriendRequest, FriendRequestCreate, FriendReque
         
         return list(friend_ids)
 
+    async def get_followers_with_total(
+        self, db: AsyncSession, *, user_id: UUID, skip: int, limit: int
+    ) -> tuple[list[User], int]:
+        # Query for total count of followers
+        total_query = (
+            select(func.count(self.model.requester_id))
+            .where(self.model.receiver_id == user_id)
+        )
+        total_result = await db.execute(total_query)
+        total = total_result.scalar_one_or_none() or 0
+
+        # Query for paginated followers' User objects
+        followers_query = (
+            select(User)
+            .join(self.model, User.id == self.model.requester_id)
+            .where(self.model.receiver_id == user_id)
+            .offset(skip)
+            .limit(limit)
+        )
+        followers_result = await db.execute(followers_query)
+        followers = followers_result.scalars().all()
+
+        return followers, total
 
 friend_request = CRUDFriendRequest(FriendRequest)

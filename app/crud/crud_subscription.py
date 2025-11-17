@@ -6,14 +6,15 @@ from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models import team_followers
 from app.models.subscription import Subscription
 
 
 async def is_subscribed(db: AsyncSession, user_id: UUID, team_id: UUID) -> bool:
     result = await db.execute(
-        select(Subscription).where(
-            Subscription.user_id == user_id,
-            Subscription.team_id == team_id,
+        select(team_followers).where(
+            team_followers.c.user_id == user_id,
+            team_followers.c.team_id == team_id,
         )
     )
     return result.scalar_one_or_none() is not None
@@ -21,7 +22,7 @@ async def is_subscribed(db: AsyncSession, user_id: UUID, team_id: UUID) -> bool:
 
 async def subscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> None:
     stmt = (
-        pg_insert(Subscription)
+        pg_insert(team_followers)
         .values(user_id=user_id, team_id=team_id)
         .on_conflict_do_nothing(index_elements=["user_id", "team_id"])
     )
@@ -31,9 +32,9 @@ async def subscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> None:
 
 async def unsubscribe(db: AsyncSession, user_id: UUID, team_id: UUID) -> int:
     result = await db.execute(
-        delete(Subscription).where(
-            Subscription.user_id == user_id,
-            Subscription.team_id == team_id,
+        delete(team_followers).where(
+            team_followers.c.user_id == user_id,
+            team_followers.c.team_id == team_id,
         )
     )
     await db.commit()

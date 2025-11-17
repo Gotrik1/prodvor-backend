@@ -28,15 +28,16 @@ class Team(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(String(350), nullable=True)
     logoUrl: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    captain_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     game: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     rank: Mapped[int] = mapped_column(Integer, default=1200)
     city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    captain: Mapped["User"] = relationship("User")
+    owner: Mapped["User"] = relationship("User")
     followers: Mapped[List["User"]] = relationship(
         "User",
         secondary=team_followers,

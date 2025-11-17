@@ -6,6 +6,7 @@ from datetime import datetime
 
 class TeamBase(BaseModel):
     name: str
+    description: Optional[str] = None
     game: Optional[str] = None
     city: Optional[str] = None
     logoUrl: Optional[str] = Field(None, alias="logoUrl")
@@ -18,10 +19,11 @@ class TeamUpdate(TeamBase):
 
 class Team(TeamBase):
     id: UUID
-    captain_id: UUID
+    owner_id: UUID
     rank: int
     created_at: datetime
     updated_at: datetime
     members: List[User] = []
+    owner: User
 
     model_config = ConfigDict(from_attributes=True)

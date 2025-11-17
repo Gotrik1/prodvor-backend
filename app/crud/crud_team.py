@@ -29,17 +29,17 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
         result = await db.execute(query)
         return result.scalars().unique().all()
     
-    async def create_with_captain(self, db: AsyncSession, *, obj_in: TeamCreate, captain_id: UUID) -> Team:
+    async def create_with_owner(self, db: AsyncSession, *, obj_in: TeamCreate, owner_id: UUID) -> Team:
         """ 
-        Создает команду и делает пользователя капитаном
+        Создает команду и делает пользователя владельцем
         """
-        db_obj = self.model(**obj_in.dict(), captain_id=captain_id)
+        db_obj = self.model(**obj_in.dict(), owner_id=owner_id)
         db.add(db_obj)
         await db.commit()
 
-        # Add captain as a team member
-        captain_member = UserTeam(user_id=captain_id, team_id=db_obj.id)
-        db.add(captain_member)
+        # Add owner as a team member
+        owner_member = UserTeam(user_id=owner_id, team_id=db_obj.id)
+        db.add(owner_member)
         await db.commit()
 
         # Re-fetch the team with members eagerly loaded to satisfy the response_model and avoid MissingGreenlet
@@ -70,17 +70,17 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
         db.add(application)
         await db.commit()
 
-    async def list_applications(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID):
+    async def list_applications(self, db: AsyncSession, *, team_id: UUID, owner_id: UUID):
         team = await self.get(db, team_id)
-        if not team or team.captain_id != captain_id:
+        if not team or team.owner_id != owner_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         
         applications_query = await db.execute(select(TeamApplication).where(TeamApplication.team_id == team_id).options(selectinload(TeamApplication.user)))
         return applications_query.scalars().all()
 
-    async def accept(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+    async def accept(self, db: AsyncSession, *, team_id: UUID, owner_id: UUID, user_id: UUID):
         team = await self.get(db, team_id)
-        if not team or team.captain_id != captain_id:
+        if not team or team.owner_id != owner_id:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         # Находим и удаляем заявку
@@ -96,9 +96,9 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
         db.add(new_member)
         await db.commit()
 
-    async def decline(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+    async def decline(self, db: AsyncSession, *, team_id: UUID, owner_id: UUID, user_id: UUID):
         team = await self.get(db, team_id)
-        if not team or team.captain_id != captain_id:
+        if not team or team.owner_id != owner_id:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         # Находим и удаляем заявку
@@ -110,9 +110,9 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
         await db.delete(application)
         await db.commit()
 
-    async def update_logo(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, logo_url: str) -> Team:
+    async def update_logo(self, db: AsyncSession, *, team_id: UUID, owner_id: UUID, logo_url: str) -> Team:
         team = await self.get(db, team_id)
-        if not team or team.captain_id != captain_id:
+        if not team or team.owner_id != owner_id:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         team.logoUrl = logo_url
@@ -120,13 +120,13 @@ class CRUDTeam(CRUDBase[Team, TeamCreate, TeamUpdate]):
         await db.refresh(team)
         return team
 
-    async def remove_member(self, db: AsyncSession, *, team_id: UUID, captain_id: UUID, user_id: UUID):
+    async def remove_member(self, db: AsyncSession, *, team_id: UUID, owner_id: UUID, user_id: UUID):
         team = await self.get(db, team_id)
-        if not team or team.captain_id != captain_id:
+        if not team or team.owner_id != owner_id:
             raise HTTPException(status_code=403, detail="Not authorized to remove members")
 
-        if captain_id == user_id:
-            raise HTTPException(status_code=400, detail="Captain cannot remove themselves")
+        if owner_id == user_id:
+            raise HTTPException(status_code=400, detail="Owner cannot remove themselves")
 
         # Находим и удаляем участника
         member_query = await db.execute(delete(UserTeam).where(UserTeam.team_id == team_id, UserTeam.user_id == user_id))

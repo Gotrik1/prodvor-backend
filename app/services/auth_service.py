@@ -1,5 +1,6 @@
 # app/services/auth_service.py
 from datetime import datetime, timedelta, timezone
+import uuid
 from fastapi import HTTPException
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -16,7 +17,7 @@ class AuthService:
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + (expires_delta if expires_delta else timedelta(minutes=15))
-        to_encode.update({"exp": expire})
+        to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
@@ -69,7 +70,7 @@ class AuthService:
     def create_refresh_token(self, data: dict, expires_in_days: int) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
-        to_encode.update({"exp": expire})
+        to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     async def refresh_session(self, db: AsyncSession, *, refresh_token: str, user_agent: str, ip_address: str) -> tuple[str, str]:

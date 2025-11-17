@@ -35,7 +35,7 @@ async def create_team(
     """
     Create new team.
     """
-    team = await crud.team.create_with_captain(db, obj_in=team_in, captain_id=current_user.id)
+    team = await crud.team.create_with_owner(db, obj_in=team_in, owner_id=current_user.id)
     return team
 
 @router.get("/{team_id}", response_model=schemas.team.Team)
@@ -58,7 +58,7 @@ async def list_applications(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    applications = await crud.team.list_applications(db, team_id=team_id, captain_id=current_user.id)
+    applications = await crud.team.list_applications(db, team_id=team_id, owner_id=current_user.id)
     return [app.user for app in applications]
 
 @router.post("/{team_id}/applications/{user_id}/respond")
@@ -70,10 +70,10 @@ async def respond_to_application(
     current_user: models.User = Depends(get_current_user),
 ):
     if action == "accept":
-        await crud.team.accept(db, team_id=team_id, captain_id=current_user.id, user_id=user_id)
+        await crud.team.accept(db, team_id=team_id, owner_id=current_user.id, user_id=user_id)
         return {"message": "Player accepted"}
     else:
-        await crud.team.decline(db, team_id=team_id, captain_id=current_user.id, user_id=user_id)
+        await crud.team.decline(db, team_id=team_id, owner_id=current_user.id, user_id=user_id)
         return {"message": "Player declined"}
 
 @router.post("/{team_id}/apply")
@@ -113,11 +113,11 @@ async def update_team_logo(
     team = await crud.team.update_logo(
         db,
         team_id=team_id,
-        captain_id=current_user.id,
+        owner_id=current_user.id,
         logo_url=logo_update.logoUrl
     )
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found or user is not the captain")
+        raise HTTPException(status_code=404, detail="Team not found or user is not the owner")
     return team
 
 @router.delete("/{team_id}/members/{user_id}")
@@ -128,7 +128,7 @@ async def remove_team_member(
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Remove a member from a team. Only the captain can do this.
+    Remove a member from a team. Only the owner can do this.
     """
-    await crud.team.remove_member(db, team_id=team_id, captain_id=current_user.id, user_id=user_id)
+    await crud.team.remove_member(db, team_id=team_id, owner_id=current_user.id, user_id=user_id)
     return {"message": "Player removed successfully"}
