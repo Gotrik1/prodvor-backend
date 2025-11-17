@@ -8,7 +8,6 @@ import {
   applyToTeam,
   cleanup,
   TeamResponse,
-  respondToApplication, // Assuming this is exported from helpers
 } from './helpers';
 
 describe('Teams endpoints', () => {
@@ -28,6 +27,19 @@ describe('Teams endpoints', () => {
         throw new Error(`Failed to toggle team follow. Status: ${response.status}, Body: ${errorBody}`);
     }
     return await response.json();
+  }
+
+  async function respondToApplication(headers: any, team_id: string, user_id: string, accept: boolean): Promise<any> {
+    const action = accept ? 'accept' : 'decline';
+    const response = await fetch(`${API_BASE_URL}/api/v1/teams/${team_id}/applications/${user_id}/respond?action=${action}`, {
+        method: 'POST',
+        headers,
+    });
+    if (response.status !== 200) {
+        const errorBody = await response.text();
+        throw new Error(`Failed to respond to application. Status: ${response.status}, Body: ${errorBody}`);
+    }
+    return response.json();
   }
 
   test('POST /api/v1/teams/{team_id}/follow - should follow and unfollow a team', async () => {
